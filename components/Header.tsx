@@ -20,7 +20,7 @@ import {
   Terminal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { DOCS_URL } from "@/lib/site";
+import { DOCS_URL, REGISTRY_URL } from "@/lib/site";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const DiscordIcon = ({ size = 20 }: { size?: number }) => (
@@ -47,6 +47,7 @@ interface NavItem {
   href?: string;
   dropdown?: DropdownItem[];
   external?: boolean;
+  bold?: boolean;
 }
 
 const sandboxDropdown: DropdownItem[] = [
@@ -132,6 +133,7 @@ const navItems: NavItem[] = [
   { label: "Features", dropdown: featuresDropdown },
   { label: "Blog", href: "/blog" },
   { label: "Docs", href: DOCS_URL, external: true },
+  { label: "Registry", href: REGISTRY_URL, external: true, bold: true },
 ];
 
 function DropdownMenu({ items }: { items: DropdownItem[] }) {
@@ -211,9 +213,11 @@ export default function Header() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`px-3 py-2 text-xs font-mono uppercase tracking-wider transition-colors ${
-                  isActive(item)
-                    ? "text-foreground"
-                    : "text-muted hover:text-foreground"
+                  item.bold
+                    ? "font-bold text-foreground hover:text-muted-strong"
+                    : isActive(item)
+                      ? "text-foreground"
+                      : "text-muted hover:text-foreground"
                 }`}
               >
                 {item.label}
@@ -223,9 +227,11 @@ export default function Header() {
                 key={item.label}
                 href={item.href!}
                 className={`px-3 py-2 text-xs font-mono uppercase tracking-wider transition-colors ${
-                  isActive(item)
-                    ? "text-foreground"
-                    : "text-muted hover:text-foreground"
+                  item.bold
+                    ? "font-bold text-foreground hover:text-muted-strong"
+                    : isActive(item)
+                      ? "text-foreground"
+                      : "text-muted hover:text-foreground"
                 }`}
               >
                 {item.label}
@@ -312,7 +318,11 @@ export default function Header() {
                   href={item.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="py-2 text-xs font-mono uppercase tracking-wider text-muted hover:text-foreground transition-colors"
+                  className={`py-2 text-xs font-mono uppercase tracking-wider transition-colors ${
+                    item.bold
+                      ? "font-bold text-foreground"
+                      : "text-muted hover:text-foreground"
+                  }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {item.label}
@@ -321,7 +331,11 @@ export default function Header() {
                 <Link
                   key={item.label}
                   href={item.href!}
-                  className="py-2 text-xs font-mono uppercase tracking-wider text-muted hover:text-foreground transition-colors"
+                  className={`py-2 text-xs font-mono uppercase tracking-wider transition-colors ${
+                    item.bold
+                      ? "font-bold text-foreground"
+                      : "text-muted hover:text-foreground"
+                  }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {item.label}

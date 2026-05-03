@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Github, BookOpen, Scale } from "lucide-react";
-import { DOCS_URL } from "@/lib/site";
+import { DOCS_URL, REGISTRY_URL } from "@/lib/site";
 
 const DiscordIcon = ({ size = 18 }: { size?: number }) => (
   <svg
@@ -56,6 +56,7 @@ const columns: FooterColumn[] = [
     links: [
       { label: "Blog", href: "/blog" },
       { label: "Docs", href: DOCS_URL, external: true },
+      { label: "Registry", href: REGISTRY_URL, external: true },
       {
         label: "GitHub",
         href: "https://github.com/always-further/nono",
