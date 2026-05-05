@@ -75,6 +75,24 @@ export default function Footer() {
   return (
     <footer className="py-16 px-6 border-t border-border">
       <div className="max-w-6xl mx-auto">
+        {/* Design partners cross-reference */}
+        <div className="mb-12 pb-8 border-b border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <p className="text-sm text-muted leading-relaxed">
+            <span className="text-foreground font-semibold">
+              Running nono for something that matters?
+            </span>{" "}
+            We&apos;re taking on design partners.
+          </p>
+          <a
+            href="https://alwaysfurther.ai/design-partners"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-foreground hover:text-muted-strong transition-colors shrink-0"
+          >
+            Become a Design Partner &rarr;
+          </a>
+        </div>
+
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-16">
           {columns.map((col) => (
             <div key={col.title}>
