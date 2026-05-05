@@ -153,65 +153,78 @@ function StageConnector() {
   );
 }
 
+/**
+ * Full-page content block for /registry. Renders the page-level <h1>,
+ * a hero section, divider, and content section. Not intended for use
+ * alongside other heroes or h1-providing components.
+ */
 export default async function RegistryGallery() {
   const packs = await fetchPacks();
 
   return (
-    <section className="relative py-32 px-6">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-16">
-          <span className="inline-block text-xs font-mono uppercase tracking-[0.2em] text-muted mb-6">
+    <>
+      {/* Hero */}
+      <section className="pt-32 pb-16 px-6">
+        <div className="max-w-6xl mx-auto">
+          <span className="inline-block text-xs font-mono uppercase tracking-[0.2em] text-muted mb-4">
             Registry
           </span>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 font-mono uppercase leading-[1.05]">
-            Signed packs.
-            <br />
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-mono font-bold uppercase tracking-tight mb-4 max-w-3xl">
+            Signed packs.{" "}
             <span className="text-muted">Verifiable installs.</span>
-          </h2>
-          <p className="text-muted text-base leading-relaxed max-w-2xl mx-auto">
+          </h1>
+          <p className="text-sm text-muted leading-relaxed max-w-2xl">
             A central registry for nono policies, agent hooks, skills, and any
-            custom artifacts for your agents. Every pack is signed, scanned, and
-            verified before it reaches your machine — software supply-chain
+            custom artifacts for your agents. Every pack is signed, scanned,
+            and verified before it reaches your machine — software supply-chain
             security built in.
           </p>
         </div>
+      </section>
 
-        {packs.length > 0 && (
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-20">
-            {packs.map((pack) => (
-              <PackCard key={pack.id} pack={pack} />
-            ))}
+      <div className="h-px bg-border mx-6 max-w-6xl lg:mx-auto" />
+
+      {/* Content */}
+      <section className="px-6 py-16">
+        <div className="max-w-6xl mx-auto">
+          {packs.length > 0 && (
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-20">
+              {packs.map((pack) => (
+                <PackCard key={pack.id} pack={pack} />
+              ))}
+            </div>
+          )}
+
+          <div className="mb-12">
+            <div className="mb-8 max-w-3xl">
+              <span className="inline-block text-[10px] font-mono uppercase tracking-[0.2em] text-muted mb-3">
+                Publish
+              </span>
+              <h2 className="text-2xl md:text-3xl font-mono font-bold uppercase tracking-tight">
+                Publish from your own repo
+              </h2>
+              <p className="text-xs text-muted mt-3">
+                You own the source. Tag a release and the pack lands on the
+                registry — signed, scanned, and ready to install.
+              </p>
+            </div>
+
+            <div className="flex flex-col md:flex-row md:items-stretch">
+              {publishStages.map((stage, i) => (
+                <Fragment key={stage.step}>
+                  <StageCard stage={stage} />
+                  {i < publishStages.length - 1 && <StageConnector />}
+                </Fragment>
+              ))}
+            </div>
           </div>
-        )}
 
-        <div className="mb-12">
-          <div className="text-center mb-8">
-            <span className="inline-block text-[10px] font-mono uppercase tracking-[0.2em] text-muted mb-3">
-              Publish
-            </span>
-            <h3 className="text-2xl md:text-3xl font-mono font-bold uppercase tracking-tight">
-              Publish from your own repo
-            </h3>
-            <p className="text-xs text-muted mt-3 max-w-xl mx-auto">
-              You own the source. Tag a release and the pack lands on the
-              registry — signed, scanned, and ready to install.
-            </p>
-          </div>
-
-          <div className="flex flex-col md:flex-row md:items-stretch">
-            {publishStages.map((stage, i) => (
-              <Fragment key={stage.step}>
-                <StageCard stage={stage} />
-                {i < publishStages.length - 1 && <StageConnector />}
-              </Fragment>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 border border-border px-6 py-5">
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-1 text-xs font-mono uppercase tracking-wider text-muted">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border border-border px-6 py-5 text-xs font-mono uppercase tracking-wider text-muted">
             <span className="inline-flex items-center gap-1.5 text-foreground">
-              <BadgeCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" strokeWidth={2} />
+              <BadgeCheck
+                className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"
+                strokeWidth={2}
+              />
               Signed
             </span>
             <span className="opacity-40">·</span>
@@ -221,26 +234,8 @@ export default async function RegistryGallery() {
             <span className="opacity-40">·</span>
             <span>Apache-2.0</span>
           </div>
-          <div className="flex items-center gap-5">
-            <a
-              href={`${REGISTRY_URL}/publish`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-foreground hover:text-muted-strong transition-colors"
-            >
-              Publish a pack <ArrowRight className="w-3.5 h-3.5" />
-            </a>
-            <a
-              href={REGISTRY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-foreground hover:text-muted-strong transition-colors"
-            >
-              Browse the registry <ArrowRight className="w-3.5 h-3.5" />
-            </a>
-          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

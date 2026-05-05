@@ -20,7 +20,7 @@ import {
   Terminal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { DOCS_URL, REGISTRY_URL } from "@/lib/site";
+import { DOCS_URL } from "@/lib/site";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const DiscordIcon = ({ size = 20 }: { size?: number }) => (
@@ -132,8 +132,8 @@ const navItems: NavItem[] = [
   { label: "Sandboxes", dropdown: sandboxDropdown },
   { label: "Features", dropdown: featuresDropdown },
   { label: "Blog", href: "/blog" },
+  { label: "Registry", href: "/registry" },
   { label: "Docs", href: DOCS_URL, external: true },
-  { label: "Registry", href: REGISTRY_URL, external: true, bold: true },
 ];
 
 function DropdownMenu({ items }: { items: DropdownItem[] }) {

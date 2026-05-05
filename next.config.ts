@@ -156,7 +156,7 @@ const nextConfig: NextConfig = {
       },
       {
         source:
-          "/:path((?!docs(?:/|$)|blog(?:/|$)|os-sandbox(?:/|$)|python-sandbox(?:/|$)|node-sandbox(?:/|$)|go-sandbox(?:/|$)|undo(?:/|$)|audit-trail(?:/|$)|provenance(?:/|$)|runtime-supervisor(?:/|$)|network-filtering(?:/|$)|credential-injection(?:/|$)|ghost-sessions(?:/|$)|python-sdk(?:/|$)|typescript-sdk(?:/|$)|go-sdk(?:/|$)|cli(?:/|$)|guides(?:/|$)|academy(?:/|$)|mintlify-assets(?:/|$)|_next(?:/|$)|api(?:/|$)|opengraph-image$|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$|.*\\.[^/]+$).+)",
+          "/:path((?!docs(?:/|$)|blog(?:/|$)|os-sandbox(?:/|$)|python-sandbox(?:/|$)|node-sandbox(?:/|$)|go-sandbox(?:/|$)|undo(?:/|$)|audit-trail(?:/|$)|provenance(?:/|$)|runtime-supervisor(?:/|$)|network-filtering(?:/|$)|credential-injection(?:/|$)|ghost-sessions(?:/|$)|python-sdk(?:/|$)|typescript-sdk(?:/|$)|go-sdk(?:/|$)|cli(?:/|$)|registry(?:/|$)|guides(?:/|$)|academy(?:/|$)|mintlify-assets(?:/|$)|_next(?:/|$)|api(?:/|$)|opengraph-image$|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$|.*\\.[^/]+$).+)",
         destination: "/docs/:path",
         permanent: true,
       },
