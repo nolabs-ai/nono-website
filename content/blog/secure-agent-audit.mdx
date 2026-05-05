@@ -1,15 +1,17 @@
 ---
 title: "What Really Happened In There? A Tamper-Evident Audit Trail for AI Agents"
+seoTitle: "Tamper-Evident Audit Trail for AI Agents"
 date: "2026-04-22"
-description: "How nono records every action an AI agent makes in an append-only Merkle tree the agent itself cannot reach, and lets anyone verify after the fact — with cryptographic proof — that the record was not forged, edited, or truncated."
+description: "How nono records every AI agent action in an append-only Merkle tree with cryptographic proof the record was not forged, edited, or truncated."
+excerpt: "Log files are stories programs tell about themselves. nono writes the audit trail from outside the sandbox, commits every event to a Merkle tree, and signs the root so any third party can verify what actually happened."
 author: "Luke Hinds"
 authorRole: "Maintainer"
 tags: ["audit", "security", "agents", "cryptography", "open source", "merkle trees", "in-toto", "DSSE"]
 ---
 
-# The problem with "trust me, bro" logs
+## The problem with "trust me, bro" logs
 
-If you run an autonomous AI agent on your machine, you are giving a language model permission to open files, run commands, touch your filesystem, and reach out to the network. You know its dangerous, but you have to trust it to do the right thing. You have to trust it to tell you the truth about what it did, and quite often they are outright liars.
+If you run an autonomous AI agent on your machine, you are giving a language model permission to open files, run commands, touch your filesystem, and reach out to the network. You know it's dangerous, but you have to trust it to do the right thing. You have to trust it to tell you the truth about what it did, and quite often they are outright liars.
 
 ![Trust me bro](/llm-fib.png)
 
@@ -176,8 +178,7 @@ When invoked with `--audit-sign-key <SECRET_REF>`, the supervisor at session fin
 
 The signing key can come from a file, kubernetes secret, system keyring, 1Password, Apple Keychain, an environment variable, or any other trust-service-supported secret reference — the secrets never hit disk in plaintext (over time we will bring in the HSMs and cloud KMSes, but for now the flexibility is there for users to roll their own vault-based solution if they want).
 
-And critically, **the key only ever materialises inside the trusted supervisor process**. It is loaded from the secret store directly into supervisor memory, used once to sign the root and zeroised. The sandboxed child has no path to it: no shared memory, `ptrace` is blockedthe IPC socket carries only length-prefixed JSON messages parsed by serde — there is no ch
-channel through which the child can read supervisor memory. The child is not merely denied filesystem access to the key; the key is not present in any address space the child can reach. From the child's perspective, the signing key is on a different machine
+And critically, **the key only ever materialises inside the trusted supervisor process**. It is loaded from the secret store directly into supervisor memory, used once to sign the root, and zeroised. The sandboxed child has no path to it: no shared memory, `ptrace` is blocked, and the IPC socket carries only length-prefixed JSON messages parsed by serde — there is no channel through which the child can read supervisor memory. The child is not merely denied filesystem access to the key; the key is not present in any address space the child can reach. From the child's perspective, the signing key is on a different machine.
 
 The signature is over the Merkle root plus bound context. So to forge a session an attacker in the child must:
 
@@ -218,11 +219,11 @@ So if we bring the threat model together. Suppose an attacker has full code exec
 
 | Attack | What structurally stops it |
 |---|---|
-| Write to the audit file directly | Nope - the audit directory is not in the child's allowed set. The child literally cannot access it. |
+| Write to the audit file directly | Nope — the audit directory is not in the child's allowed set. The child literally cannot access it. |
 | Reach into the supervisor to alter the in-memory record | No shared memory, ptrace blocked, IPC is length-prefixed JSON parsed by serde in memory-safe Rust. |
 | Edit events after the session ends | Every event's leaf hash feeds the Merkle root; any edit changes the root; the root is signed. |
 | Truncate the log | Chain hash and event count recorded in the summary; truncation is detected on verify. |
-| Delete the session entirely | Nope - its stored outside of the sandbox and is inaccessible to the child. |
+| Delete the session entirely | Nope — it's stored outside the sandbox and inaccessible to the child. |
 | Replace the binary that ran with one of the same name | `ExecutableIdentity` commits the SHA-256 of the actual file loaded; change it and the signed root becomes invalid. |
 | Swap the public key in session metadata so a forged sig verifies | `--public-key-file` pins verification to an expected key; out-of-band key distribution beats in-band swaps. |
 | Forge a new session entirely | Requires the attestation signing key, which lives in the operator's keystore, and can only be accessed via API from the supervisor process. |
@@ -238,3 +239,12 @@ For every other adversary on the list, the defense isn't "we watch for it." The 
 The truth is most "agent security" today is policy without proof. Rules get written, decisions get made, and you are trusted to believe the program's own narrative about what it did. Audit is recording the prompt from api calls back and forth to `/api/chat/completions` and selling that as Agentic security auditing.
 
 With nono, the kernel decides policy at runtime; the audit trail makes every one of those decisions, every binary executed, and every filesystem change into cryptographic evidence. Three independent people — the operator who ran the agent, the engineer reviewing it next week, and an auditor six months from now — can all verify the same session and arrive at the same answer, without trusting each other and without trusting the host, and most importantly, without trusting the agent itself.
+
+## Next steps
+
+- **[Audit Trail](/audit-trail)** — How the tamper-evident audit log works under the hood
+- **[Provenance](/provenance)** — Sigstore signing and DSSE attestation for instruction files
+- **[OS Sandbox](/os-sandbox)** — How kernel-level isolation separates the supervisor from the agent
+- **[Runtime Supervisor](/runtime-supervisor)** — The trusted parent process that records every capability decision
+- **[Docs](https://nono.sh/docs)** — Full `nono audit verify` reference
+- **[GitHub](https://github.com/always-further/nono)** — Source code

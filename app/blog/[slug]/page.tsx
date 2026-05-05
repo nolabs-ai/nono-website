@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { compileMDX } from "next-mdx-remote/rsc";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
+import remarkUnwrapImages from "remark-unwrap-images";
 import { getAllSlugs, getPostBySlug, getRelatedPosts } from "@/lib/blog";
 import { getMdxComponents } from "@/lib/mdx-components";
 import { PostHeader } from "@/components/blog/PostHeader";
@@ -75,7 +76,7 @@ export default async function BlogPostPage({ params }: PageProps) {
     components: getMdxComponents(),
     options: {
       mdxOptions: {
-        remarkPlugins: [remarkGfm],
+        remarkPlugins: [remarkGfm, remarkUnwrapImages],
         rehypePlugins: [rehypeSlug],
       },
       parseFrontmatter: true,

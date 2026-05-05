@@ -10,7 +10,7 @@ import OrganizationSchema from "@/components/structured-data/OrganizationSchema"
 export const metadata: Metadata = {
   metadataBase: new URL("https://nono.sh"),
   title: {
-    default: "Next-Generation Agent Security | nono",
+    default: "Sandbox for AI Agents — Kernel-Level Isolation | nono",
     template: "%s | nono",
   },
   description:
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: "Next-Generation Agent Security | nono",
+    title: "Sandbox for AI Agents — Kernel-Level Isolation | nono",
     description:
       "Kernel-enforced isolation, network filtering, immutable auditing, and atomic rollbacks for AI agents - built into the nono CLI and native SDKs.",
     type: "website",
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Next-Generation Agent Security | nono",
+    title: "Sandbox for AI Agents — Kernel-Level Isolation | nono",
     description:
       "Kernel-enforced isolation, network filtering, immutable auditing, and atomic rollbacks for AI agents - built into the nono CLI and native SDKs.",
     site: "@alwaysfurtherAI",
