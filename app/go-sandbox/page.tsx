@@ -8,12 +8,12 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Go Sandbox - Isolate Go AI Agents with Kernel-Level Enforcement",
   description:
-    "Sandbox Go programs and AI agents with kernel-enforced isolation. nono-go provides CGo bindings to apply irrevocable Landlock and Seatbelt sandboxes from Go.",
+    "Sandbox Go programs and AI agents with kernel-enforced isolation. nono-go provides CGo bindings to apply irrevocable Landlock (Linux, Windows/WSL2) and Seatbelt (macOS) sandboxes from Go.",
   alternates: { canonical: "/go-sandbox" },
   openGraph: {
     title: "Go Sandbox - Isolate Go AI Agents with Kernel-Level Enforcement",
     description:
-      "Sandbox Go programs and AI agents with kernel-enforced isolation. nono-go provides CGo bindings to apply irrevocable Landlock and Seatbelt sandboxes from Go.",
+      "Sandbox Go programs and AI agents with kernel-enforced isolation. nono-go provides CGo bindings to apply irrevocable Landlock (Linux, Windows/WSL2) and Seatbelt (macOS) sandboxes from Go.",
     type: "website",
     images: [{ url: "/logo.png", width: 1200, height: 630, alt: "nono" }],
   },
@@ -191,8 +191,8 @@ export default function GoSandboxPage() {
               {" "}directly.
             </p>
             <p>
-              nono enforces isolation at the kernel level using Landlock (Linux)
-              and Seatbelt (macOS). The sandbox is irrevocable &mdash; once
+              nono enforces isolation at the kernel level using Landlock (Linux
+              and Windows/WSL2) and Seatbelt (macOS). The sandbox is irrevocable &mdash; once
               applied, it cannot be loosened, even by the sandboxed process
               itself. This applies to the process and all its children.
             </p>

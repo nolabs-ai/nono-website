@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { compileMDX } from "next-mdx-remote/rsc";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
+import remarkUnwrapImages from "remark-unwrap-images";
 import { getAllLessonSlugs, getLessonBySlug } from "@/lib/academy";
 import { getMdxComponents } from "@/lib/mdx-components";
 import Header from "@/components/Header";
@@ -56,7 +57,7 @@ export default async function LessonPage({ params }: PageProps) {
     components: getMdxComponents(),
     options: {
       mdxOptions: {
-        remarkPlugins: [remarkGfm],
+        remarkPlugins: [remarkGfm, remarkUnwrapImages],
         rehypePlugins: [rehypeSlug],
       },
       parseFrontmatter: true,
