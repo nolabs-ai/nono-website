@@ -23,7 +23,7 @@
     "reading-time": "^1.5.0",
     "rehype-slug": "^6.0.0",
     "remark-gfm": "^4.0.1",
-    "remark-unwrap-images": "^4.0.1"
+    "remark-unwrap-images": "^5.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
