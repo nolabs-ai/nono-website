@@ -1,0 +1,47 @@
+---
+title: "Running Hermes Agent Safely with nono sandboxing and Credential Injection Proxy"
+date: "2026-05-20"
+description: "Learn how to securely run your Hermes Agent in nono with sandboxing and credential injection. High-level overview with links to the official package."
+author: "Luke Hinds"
+authorRole: "Maintainer"
+tags: ["sandbox", "hermes agent", "credential injection", "agent", "NousResearch"]
+---
+
+Hermes Agent has surged in popularity for its ability to act in a real development environment — running commands, inspecting files, calling APIs, and maintaining context across non-trivial work. But that same capability is also a risk: once an agent can use your shell and your credentials, prompt injection stops being theoretical.
+
+nono addresses this with a dedicated [Hermes package on the registry](https://registry.nono.sh/packages/always-further/hermes) that bundles everything you need: a plugin, a skill, and a base profile with secure defaults.
+
+## What the package gives you
+
+- **File isolation** — Hermes gets only the directories and files you explicitly grant. Nothing else is visible.
+- **Phantom credential injection** — Hermes sees short-lived fake tokens, not your real API keys. Outbound requests are proxied, the real credential is swapped in at the edge, and nothing sensitive touches the agent process.
+- **Network scoping** — Credentialed traffic can be constrained to specific providers and API paths, so a compromised tool cannot reach arbitrary endpoints.
+- **Audit and rollback** — Logs and undo capabilities give you visibility into what happened and a path to recover.
+- **Supply chain integrity** — The plugin and skill are signed with full provenance via [Sigstore](https://sigstore.dev/).
+
+## Getting started
+
+Everything you need — install instructions, profile options, credential configuration, and release notes — lives in the package listing:
+
+**[registry.nono.sh/packages/always-further/hermes](https://registry.nono.sh/packages/always-further/hermes)**
+
+The registry entry stays current as Hermes and nono evolve, so it's the right place to follow for updates rather than a static blog post.
+
+## The design philosophy
+
+The sandbox is a boundary, not a permission set. The profile defines what Hermes can reach; inside that boundary it operates freely. Grants are intentionally minimal by default.
+
+The phantom credential proxy applies the same principle to secrets. Your real keys never enter the agent's environment. If a tool is compromised or a prompt injection attempt succeeds, the attacker gets a short-lived phantom token scoped to a single session, not credentials they can reuse.
+
+For teams running Hermes on sensitive codebases or against production APIs, this combination — filesystem isolation, phantom credentials, and network scoping — closes the ambient-authority gap that default setups leave open.
+
+## Want your own profile, skills or plugins?
+
+The nono registry uses a unique architecture, where all of the package files are stored in a Git repository. This means you can fork the repo, make your own customizations, and use it to boostrap new agents, share with your team and codify your best practices.
+
+We then chain the package back to your repository, with full cryptographic signing and provenance via Sigstore, so you get the benefits of supply chain integrity without sacrificing flexibility. Should the registry ever get compromised, the nono client will detect any tampering with the package files and refuse to run them, giving you an additional layer of security.
+
+Publishing your own package is free and open to everyone. If you have a profile, skill, or plugin you think others could benefit from, we encourage you to share it on the registry. You can find the contribution guidelines in the repository: 
+
+- Documentation on publishing your own package: https://nono.sh/docs/cli/features/package-publishing
+- Package publishing page: https://registry.nono.sh/publish 
