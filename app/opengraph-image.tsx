@@ -86,7 +86,7 @@ export default function OpenGraphImage() {
               marginBottom: "20px",
             }}
           >
-            Next-generation agent security
+            Secure, capability-based runtime for AI agents.
           </div>
           <div
             style={{

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     template: "%s | nono",
   },
   description:
-    "Kernel-enforced isolation, network filtering, immutable auditing, and atomic rollbacks for AI agents - built into the nono CLI and native SDKs.",
+    "capability-based, policy-governed runtime for AI agents, with kernel-enforced isolation, network filtering, immutable auditing, and atomic rollbacks for AI agents.",
   keywords: [
     "AI agent sandbox",
     "AI agent security",
@@ -40,9 +40,9 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: "Sandbox for AI Agents — Kernel-Level Isolation | nono",
+    title: "Secure, capability-based runtime for AI agents | nono",
     description:
-      "Kernel-enforced isolation, network filtering, immutable auditing, and atomic rollbacks for AI agents - built into the nono CLI and native SDKs.",
+      "Capability-based agent runtime with fine-grained policies . Brokering access directly within the agent's operating context.",
     type: "website",
     locale: "en_US",
     images: [
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
         url: "/logo.png",
         width: 1200,
         height: 630,
-        alt: "nono - OS-Level Isolation for AI Agents",
+        alt: "nono - Capability-based, policy-governed runtime for AI agents",
       },
     ],
   },
