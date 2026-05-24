@@ -9,7 +9,7 @@ authorRole: "Maintainer"
 tags: ["audit", "security", "agents", "cryptography", "open source", "merkle trees", "in-toto", "DSSE"]
 ---
 
-## The problem with "trust me, bro" logs
+## The problem with standard agent logging
 
 If you run an autonomous AI agent on your machine, you are giving a language model permission to open files, run commands, touch your filesystem, and reach out to the network. You know it's dangerous, but you have to trust it to do the right thing. You have to trust it to tell you the truth about what it did, and quite often they are outright liars.
 
@@ -26,7 +26,7 @@ An audit trail for an untrusted process has to survive a very specific adversary
 3. The record has to be bound to the binary that actually ran, not just "a command called `node`".
 4. A third party — not the host that produced the log — has to be able to verify all of the above.
 
-This post describes how [nono](https://nono.sh) does each of these, walks through the crypto well enough that "Merkle tree" and "inclusion proof" finally make sense, and shows why the combination makes nono the strongest AI audit system for agent execution today, anywhere on planet Earth (the last bit is a bold claim, but I apologise, I'm a bit biased, I promise to be objective in my analysis from now on.)
+This post describes how [nono](https://nono.sh) does each of these, walks through the crypto well enough that "Merkle tree" and "inclusion proof" finally make sense, and shows why the combination makes nono a solution well purposed for agents in highly regulated environments.
 
 ---
 
@@ -75,13 +75,11 @@ The root is one 32-byte value that cryptographically commits to every leaf under
 
 ![merkle proof](/audit-record-arch-two.png)
 
-p.s. If you have never read the [Bitcoin whitepaper](https://bitcoin.org/bitcoin.pdf), you should, don't be put off by crypto bros and math. It is a masterpiece of clear writing, brilliant design and engineering. The Merkle tree section is only a few paragraphs but it is worth the whole read. 
-
-p.p.s I am in fact **Satoshi Nakamoto**, you learned it here. I just don't have any proof (boom-tiss).
+p.s. If you have never read the [Bitcoin whitepaper](https://bitcoin.org/bitcoin.pdf), you should. It is a masterpiece of clear writing, brilliant design and engineering. The Merkle tree section is only a few paragraphs but it is worth the whole read. 
 
 ### Inclusion proofs: one value, no full replay
 
-Here is the quiet superpower of the trees. If I give you the Merkle root and then later claim "event #3 really was in the log" — I don't have to show you the whole log to prove it. I just have to show you:
+Here is the quiet superpower of merkle trees. If I give you the Merkle root and then later claim "event #3 really was in the log" — I don't have to show you the whole log to prove it. I just have to show you:
 
 - Event #3 itself
 - The sibling hash at each level going up to the root (a handful of 32-byte values — `log₂ N` of them)
