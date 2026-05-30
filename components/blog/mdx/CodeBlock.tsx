@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Highlight, themes } from "prism-react-renderer";
 import { Copy, Check } from "lucide-react";
+import { useTheme } from "@/lib/useTheme";
 
 interface CodeBlockProps {
   children?: string;
@@ -33,8 +34,10 @@ export function CodeBlock({
   highlight,
 }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
+  const theme = useTheme();
   const language = className?.replace(/language-/, "") ?? "text";
   const highlightedLines = parseHighlightLines(highlight);
+  const prismTheme = theme === "dark" ? themes.nightOwl : themes.nightOwlLight;
 
   if (!className) {
     return (
@@ -73,7 +76,7 @@ export function CodeBlock({
       </div>
 
       <Highlight
-        theme={themes.nightOwl}
+        theme={prismTheme}
         code={children.trim()}
         language={language}
       >

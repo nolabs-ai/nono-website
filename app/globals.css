@@ -24,8 +24,8 @@
   --code-text: #1a1a1a;
   --code-border: rgba(0, 0, 0, 0.1);
 
-  --terminal-bg: #1a1a1a;
-  --terminal-text: #d4d4d4;
+  --terminal-bg: #f0f0ee;
+  --terminal-text: #1a1a1a;
   --terminal-border: rgba(0, 0, 0, 0.15);
 
   --selection-bg: rgba(232, 115, 74, 0.2);

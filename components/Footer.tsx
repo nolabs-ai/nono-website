@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Github, BookOpen, Scale } from "lucide-react";
+import { AfLogo } from "@/components/AfLogo";
 import { DOCS_URL } from "@/lib/site";
 
 const DiscordIcon = ({ size = 18 }: { size?: number }) => (
@@ -132,14 +132,9 @@ export default function Footer() {
               href="https://alwaysfurther.ai?utm_source=nono-sh"
               target="_blank"
               rel="noopener noreferrer"
-              className="opacity-50 hover:opacity-100 transition-opacity"
+              className="text-foreground opacity-50 hover:opacity-100 transition-opacity"
             >
-              <Image
-                src="/af-logo.svg"
-                alt="Always Further"
-                width={120}
-                height={24}
-              />
+              <AfLogo width={120} height={24} />
             </a>
           </div>
 

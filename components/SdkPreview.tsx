@@ -2,6 +2,7 @@
 
 import { Highlight, themes } from "prism-react-renderer";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import { useTheme } from "@/lib/useTheme";
 
 const snippets = [
   {
@@ -49,6 +50,8 @@ const ffiLanguages = [
 ];
 
 export default function SdkPreview() {
+  const theme = useTheme();
+  const prismTheme = theme === "dark" ? themes.nightOwl : themes.nightOwlLight;
   return (
     <section className="py-24 px-6">
       <div className="max-w-4xl mx-auto">
@@ -70,7 +73,7 @@ export default function SdkPreview() {
                 </span>
               </div>
               <Highlight
-                theme={themes.nightOwl}
+                theme={prismTheme}
                 code={snippet.code}
                 language={snippet.lang}
               >
