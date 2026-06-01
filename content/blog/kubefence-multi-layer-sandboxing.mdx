@@ -1,0 +1,163 @@
+---
+title: "Why Containers Aren't Enough for AI Agents in Kubernetes"
+seoTitle: "Multi-Layer Sandboxing for AI Agents in Kubernetes with Kubefence"
+date: "2026-05-28"
+description: "How Kubefence stacks Kata Containers, Seccomp, and Nono to sandbox AI workloads in Kubernetes"
+excerpt: "Containers share the host kernel by design, and for most workloads, this trade-off is acceptable. For AI agents that execute dynamically generated code, it is not. Kubefence composes Kata Containers, Seccomp, and Nono to provide layered, hardware-enforced isolation for Kubernetes workloads, enabled through a single RuntimeClass"
+author: "Pradipta Banerjee"
+authorRole: "Contributor"
+tags: ["kubernetes", "security", "AI agents", "sandboxing", "kata containers", "landlock", "nono", "open source"]
+---
+
+Containers utilise a shared host kernel, a design choice that makes them fast, lightweight, and cost-effective at scale. Kernel namespaces and cgroups provide process-level isolation. However, all containers on a host still share the same kernel, making it a significant attack surface.
+
+For most workloads, this trade-off is acceptable. For AI agents that receive instructions from a language model, generate and execute code at runtime, and operate with broad filesystem or network permissions, it is not.
+
+A successful kernel exploit from within a container does not merely break out of the isolation; it compromises the host itself, potentially exposing other workloads, secrets, and cloud credentials.
+
+[Kubefence](https://kubefence.github.io/kubefence/) is an open-source Kubernetes NRI plugin that layers three independent isolation mechanisms on top of standard container isolation. Each layer targets a different threat vector, providing defence-in-depth for running AI agents securely.
+
+---
+
+## The threat surface in a shared-kernel world
+
+A kernel exploit can completely bypass namespace isolation and grant control of the host.
+
+Even without a kernel exploit, a container may still have significant reach, depending on the capabilities and interfaces exposed to it. An attacker may be able to ptrace other processes, load eBPF programs, use io_uring to manipulate kernel state, or replace seccomp filters to widen the available syscall surface.
+
+Standard Kubernetes controls, such as Pod Security Admission, NetworkPolicies, and RBAC, govern what a pod can request through the Kubernetes API. They do not constrain what an already-exploited process can do at runtime.
+
+Kubefence addresses these runtime threat categories via a multi-layer isolation strategy:
+Layer 1: Virtualisation for providing each pod with a separate kernel. Kubefence uses `Kata` containers for providing a separate kernel and virtualisation (VM) boundary per pod
+Layer 2: `Seccomp` for restricting the available syscall surface to the container process
+Layer 3: Landlock Linux security module for filesystem and network access confinement of the container process. Kubefence uses `nono` for filesystem and network access confinement.
+
+![Multilayer Isolation](/kubefence-multilayer-isolation.png)
+
+---
+
+## Layer 1: Kata Containers - kernel isolated pods
+
+[**Kata Containers**](https://katacontainers.io/) runs each pod inside a dedicated VM with its own kernel. From a Kubernetes perspective, the workload still appears as a normal pod, but it no longer shares the host kernel.
+
+Isolating a pod inside a VM fundamentally changes the kernel-exploit threat model. A successful exploit against the guest kernel does not directly compromise the host kernel because a hardware-enforced hypervisor boundary separates them. To reach the host, an attacker would additionally require a hypervisor-level escape vulnerability.
+
+---
+
+## Layer 2: Seccomp — syscall confinement
+
+[**Seccomp**](https://en.wikipedia.org/wiki/Seccomp) restricts which syscalls a process can invoke. Kubefence's NRI plugin injects a `seccomp` profile into the OCI spec for opt-in containers before they start.
+
+The restricted profile builds on Docker's `RuntimeDefault` allowlist and blocks six additional syscalls, each targeting a specific exploitation primitive:
+
+| Syscall | Why it's blocked |
+|---|---|
+| `seccomp(SET_MODE_FILTER)` | Prevents the process from replacing or weakening its own seccomp filter |
+| `ptrace` | Blocks process memory inspection, used in many exploitation techniques |
+| `io_uring_setup` | Reduces exposure to a historically high-risk kernel attack surface, including vulnerabilities such as CVE-2022-2639 and CVE-2023-2598 |
+| `process_vm_readv` | Prevents reading the address space of another process in the same VM |
+| `bpf(BPF_PROG_LOAD)` | Blocks loading eBPF programs that can be used for kernel introspection or exploitation |
+| `userfaultfd` | Removes a primitive frequently used in heap manipulation and race-condition exploits |
+
+These `seccomp` filters operate at the guest kernel boundary. Combined with the VM isolation from Layer 1, an exploit that gets past `seccomp` still has to contend with the hypervisor.
+
+---
+
+## Layer 3: nono — filesystem and network confinement
+
+[**Nono**](https://nono.sh) applies kernel-level confinement for both filesystem and network access using [profiles](https://nono.sh/docs/cli/features/profiles-groups#profiles). These restrictions are enforced using [Landlock](https://landlock.io/), a Linux Security Module that applies unprivileged, kernel-enforced access controls to a process and its descendants. Once a Landlock policy is applied, the confined process tree cannot access filesystem paths outside its allowed set, and even root within the container cannot remove those restrictions.
+
+Kubefence's NRI plugin wires this in during container creation. When a CreateContainer event arrives for an opted-in pod, the plugin prepends the following to the container's execution arguments before passing them to the container runtime:
+
+```
+/nono/nono wrap --profile <profile> --
+```
+**nono** applies the confinement profile and then exec()s into the original workload, becoming PID 1 under confinement. All child processes inherit the same restrictions.
+
+The confinement profile controls both filesystem and network access. This allows Kubefence to enforce workload-specific policies such as restricting an AI agent to a particular project directory while simultaneously preventing unrestricted network egress.
+
+The nono binary itself is bind-mounted into the container at runtime, so no container image changes are required. An existing AI agent image can opt into the full isolation stack by specifying a single RuntimeClass.
+
+---
+
+## How Kubefence wires it together
+
+Kubefence runs as a DaemonSet on every node. It uses the [Node Resource Interface (NRI)](https://github.com/containerd/nri), an extension point in containerd and CRI-O that intercepts container lifecycle events before the workload starts.
+
+When a pod with `runtimeClassName: kata-nono-sandbox` is created, Kubefence receives the CreateContainer event and modifies the [OCI](https://github.com/opencontainers/runtime-spec) spec before passing it to the runtime.
+
+The plugin performs three actions:
+
+1. Prepends: `nono wrap --profile <profile> --` to the container command arguments
+2. Bind-mounts the nono binary from the host into the container at `/nono/nono`
+3. Injects the restricted seccomp profile into the container security configuration
+
+Pods that do not opt into the RuntimeClass are unaffected. The NRI plugin only modifies workloads matching the configured RuntimeClass.
+
+---
+
+## Threat model
+
+With all three isolation layers active, this is the effective attack surface available to an attacker with arbitrary code execution inside the container:
+
+| Attack | Layer that stops it |
+|---|---|
+| Escape to the worker node via a guest-kernel exploit | Kata Containers — guest and host kernels are separated by a hardware-enforced hypervisor boundary |
+| Replace or weaken the seccomp filter to restore blocked syscalls | Sseccomp — `SET_MODE_FILTER` blocked before PID 1 starts |
+| `ptrace` another process | Seccomp — `ptrace` blocked |
+| Load an eBPF program for kernel introspection or exploitation | Seccomp — `bpf(BPF_PROG_LOAD)` blocked |
+| Exploit io_uring vulnerabilities such as CVE-2022-2639 or CVE-2023-2598| Seccomp — `io_uring_setup` blocked |
+| Read another process's address space | Seccomp — `process_vm_readv` blocked |
+| Access files outside the allowed set | nono — kernel-enforced path restrictions|
+| Establish unrestricted outbound TCP connections | nono — outbound TCP restrictions |
+| `kubectl exec` into the pod | kata-agent OPA policy — exec is blocked at the VM agent level |
+
+
+None of these controls relies on detection or alerting. Each restriction is enforced at the syscall, kernel, or hypervisor boundary before the operation can succeed.
+
+
+---
+
+## What Kubefence doesn't do
+
+**It does not replace Kubernetes control-plane security**. Kubefence does not replace Pod Security Admission, OPA Gatekeeper, Kyverno, RBAC, or NetworkPolicies. Those systems govern cluster policy and API access. Kubefence focuses on runtime isolation after a workload has started.
+
+**It is experimental software**. Kubefence demonstrates how multiple isolation primitives can be composed to protect infrastructure from high-risk untrusted Kubernetes workloads, such as AI agents. It should be evaluated, tested, and threat-modelled accordingly, rather than treated as a hardened production security tool in its current form.
+
+---
+
+## Getting started
+
+Requirements:
+
+- Kubernetes + containerd 1.7+ with NRI enabled
+
+Deploy with Helm:
+
+```bash
+helm install kubefence oci://ghcr.io/kubefence/charts/kubefence \
+  --namespace kube-system \
+  --set kata.enabled=true \
+  --set config.seccompProfile=restricted
+```
+
+Then opt in any pod:
+
+```yaml
+spec:
+  runtimeClassName: kata-nono-sandbox
+```
+
+Full documentation and source: [kubefence.github.io/kubefence](https://kubefence.github.io/kubefence/)
+
+---
+
+## Summary
+
+Virtualisation, Seccomp, and Landlock are well-established Linux kernel primitives. While none of these is new concepts, Kubefence demonstrates an opinionated integration of all three primitives, applied at the process creation stage of containers. This approach requires no modifications to existing container images or agent code. 
+
+As a result, Kubefence creates an isolation model where no single exploit is enough to compromise the host system. An attacker would need to simultaneously breach the hypervisor boundary, circumvent the Seccomp filter, and escape from Landlock filesystem confinement. This combination significantly increases the difficulty and cost of executing a successful attack compared to standard container isolation.
+
+This increased cost of executing a successful attack is particularly important for scenarios where the code being executed is generated by a language model without any human review.
+
+
