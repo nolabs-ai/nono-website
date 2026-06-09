@@ -6,11 +6,11 @@ date: "2026-02-27"
 
 AI coding agents make changes at scale. A single session can touch dozens of files &mdash; refactoring functions, updating dependencies, modifying configuration. When something goes wrong, you need a reliable way to undo everything without manually tracking what changed.
 
-nono's snapshot system captures the filesystem state before every agent session and lets you restore it with a single command.
+nono's snapshot system captures the filesystem state before an agent session and lets you restore it with a single command. Snapshots are opt-in: pass `--rollback` to `nono run` to enable them for a session.
 
 ## How snapshots work
 
-When nono starts an agent session, it walks every file in the sandbox scope and stores a content-addressed copy. Each file is hashed with SHA-256, and the hash is used as the storage key. This means:
+When you run an agent with `nono run --rollback`, nono walks every file in the sandbox scope and stores a content-addressed copy. Each file is hashed with SHA-256, and the hash is used as the storage key. This means:
 
 - Identical files share storage (deduplication)
 - The snapshot database grows only by unique content
@@ -21,17 +21,17 @@ After the session ends, a second snapshot captures the final state. The diff bet
 ## Listing sessions
 
 ```bash
-nono sessions list
+nono rollback list
 ```
 
-This shows all recorded sessions with their IDs, timestamps, and number of files changed.
+This shows all recorded rollback sessions with their IDs, timestamps, and number of files changed. Session IDs look like `20260507-231436-10467`.
 
 ## Reviewing changes
 
-Before deciding to undo, review what the agent changed:
+Before deciding to restore, review what the agent changed:
 
 ```bash
-nono diff <session-id>
+nono rollback show <session-id> --diff
 ```
 
 This produces a unified diff showing:
@@ -41,28 +41,32 @@ This produces a unified diff showing:
 - Deleted files
 
 <Tip>
-  Pipe the diff output to your preferred review tool. For example, `nono diff latest | delta` for side-by-side rendering with syntax highlighting.
+  Use `--side-by-side` for a two-column view, or pipe the diff to your preferred review tool: `nono rollback show <session-id> --diff | delta`.
 </Tip>
 
-## Undoing a session
+## Restoring a session
 
 To restore all files to their pre-session state:
 
 ```bash
-nono undo <session-id>
+nono rollback restore <session-id>
 ```
 
-This is an atomic operation &mdash; either all files are restored or none are. The undo itself is recorded as a new snapshot, so you can undo the undo if needed.
+This is an atomic operation &mdash; either all files are restored or none are.
 
-## Selective restoration
+## Previewing a restore
 
-Sometimes you want to keep some of the agent's changes but revert others. nono supports file-level selective restoration:
+To see exactly what a restore would change before touching any files, use `--dry-run`:
 
 ```bash
-nono undo <session-id> --files src/auth/middleware.ts package.json
+nono rollback restore <session-id> --dry-run
 ```
 
-This restores only the specified files, leaving all other agent changes in place.
+For sessions with multiple snapshots, restore to a specific snapshot number with `--snapshot`:
+
+```bash
+nono rollback restore <session-id> --snapshot 1
+```
 
 ## Practical workflows
 
@@ -72,15 +76,16 @@ Run multiple agent sessions with different prompts or configurations, then compa
 
 ```bash
 # Session 1: conservative approach
-nono run --allow ~/projects/myapp -- claude "refactor auth module"
-nono diff latest > approach-1.diff
+nono run --rollback --allow ~/projects/myapp -- claude "refactor auth module"
+# Grab the session ID from `nono rollback list`, then:
+nono rollback show <session-1-id> --diff > approach-1.diff
 
-# Undo and try again
-nono undo latest
+# Restore and try again
+nono rollback restore <session-1-id>
 
 # Session 2: aggressive approach
-nono run --allow ~/projects/myapp -- claude "rewrite auth module from scratch"
-nono diff latest > approach-2.diff
+nono run --rollback --allow ~/projects/myapp -- claude "rewrite auth module from scratch"
+nono rollback show <session-2-id> --diff > approach-2.diff
 ```
 
 Compare the two diffs and keep the better result.
@@ -90,11 +95,12 @@ Compare the two diffs and keep the better result.
 In CI pipelines, capture a snapshot before the agent runs and automatically revert if tests fail:
 
 ```bash
-nono run --allow . -- claude "fix failing tests"
+nono run --rollback --allow . -- claude "fix failing tests"
+session=$(nono rollback list --recent 1 --json | jq -r '.[0].session_id')
 
 if ! npm test; then
   echo "Agent changes broke tests, reverting"
-  nono undo latest
+  nono rollback restore "$session"
   exit 1
 fi
 ```
@@ -105,19 +111,25 @@ fi
 
 ## Storage management
 
-Snapshots accumulate over time. To see storage usage:
+Snapshots accumulate over time. Preview what cleanup would remove with `--dry-run`:
 
 ```bash
-nono sessions stats
+nono rollback cleanup --dry-run
 ```
 
-To prune old snapshots:
+To prune old snapshots, remove sessions older than a number of days:
 
 ```bash
-nono sessions prune --older-than 30d
+nono rollback cleanup --older-than 30
 ```
 
-This removes snapshots older than 30 days while preserving the content-addressed store entries that are still referenced by newer snapshots.
+You can also keep only the N newest sessions:
+
+```bash
+nono rollback cleanup --keep 10
+```
+
+Cleanup preserves the content-addressed store entries that are still referenced by newer snapshots.
 
 ## Next steps
 

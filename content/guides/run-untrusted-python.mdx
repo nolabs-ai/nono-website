@@ -51,7 +51,7 @@ If your Python code needs API keys, don't pass them as environment variables. no
 security add-generic-password -s "nono" -a "openai_api_key" -w "sk-..."
 
 # Run with phantom token injection
-nono run --allow-cwd --proxy-credential openai -- python my_agent.py
+nono run --allow-cwd --credential openai -- python my_agent.py
 ```
 
 The Python process sees a phantom token in `OPENAI_API_KEY`. The real key never enters the sandbox. Even if the code dumps every environment variable, there's nothing to steal.
@@ -86,15 +86,15 @@ Run with the profile:
 nono run --profile untrusted-python.json --allow-cwd -- python my_script.py
 ```
 
-## Auto-generate a profile with nono learn
+## Build a profile interactively
 
-If you're not sure what the script needs, let nono trace it:
+If you're not sure what the script needs, run it under nono and let it report denials. nono keeps the command sandboxed, surfaces each blocked filesystem access and network lookup, and offers to save the missing entries to a profile:
 
 ```bash
-nono learn --timeout 60 --json -- python my_script.py
+nono run --allow-cwd -- python my_script.py
 ```
 
-Exercise the script's full code path while it runs. nono traces every filesystem access and DNS lookup, then outputs a profile you can review and tighten.
+Exercise the script's full code path while it runs. Each time it tries to read or write outside the sandbox, nono records the denial and prompts you to add it — so you tighten the profile interactively instead of guessing up front.
 
 ## What this protects against
 

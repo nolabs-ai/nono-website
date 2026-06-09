@@ -61,7 +61,7 @@ nono takes the opposite approach: the agent runs in your environment but with ke
 docker run -v $(pwd):/app -e OPENAI_API_KEY=$OPENAI_API_KEY my-agent
 
 # nono approach: kernel-enforced restrictions, phantom tokens
-nono run --allow-cwd --proxy-credential openai -- python my_agent.py
+nono run --allow-cwd --credential openai -- python my_agent.py
 ```
 
 In the Docker example, the API key is in the container's environment — readable by any process. In the nono example, the API key stays in your keychain. The agent receives a [phantom token](/blog/blog-credential-injection) that only works through a localhost proxy.

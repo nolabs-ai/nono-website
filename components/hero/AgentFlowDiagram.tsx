@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 
 const lines = [
-  { type: "command" as const, text: "nono run --proxy-allow api.example.com agent", delay: 0 },
+  { type: "command" as const, text: "nono run --allow-domain api.example.com agent", delay: 0 },
   { type: "blank" as const, text: "", delay: 600 },
   { type: "log" as const, label: "sandbox", text: "landlock applied (3 paths allowed)", delay: 800 },
   { type: "log" as const, label: "network", text: "proxy active (2 hosts allowed)", delay: 1200 },

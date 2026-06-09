@@ -50,7 +50,7 @@ nono run --allow-cwd -- python my_agent.py
 nono run --allow-cwd --network-profile minimal -- python my_agent.py
 
 # Inject credentials from keychain (real keys never enter the sandbox)
-nono run --allow-cwd --proxy-credential openai -- python my_agent.py`;
+nono run --allow-cwd --credential openai -- python my_agent.py`;
 
 const policyCode = `{
   "meta": {
@@ -73,7 +73,7 @@ const policyCode = `{
   "interactive": true
 }`;
 
-const bannerCode = `$ nono run --allow-cwd --proxy-allow llmapi -- agent
+const bannerCode = `$ nono run --allow-cwd --allow-domain llmapi -- agent
 
   ▄█▄   nono v0.7.0
  ▀▄^▄▀  - Halo Nono!

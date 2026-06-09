@@ -49,7 +49,7 @@ Don't pass API keys as environment variables — they're visible in `/proc/PID/e
 security add-generic-password -s "nono" -a "openai_api_key" -w "sk-..."
 
 # Run with injection
-nono run --allow-cwd --proxy-credential openai -- node my_agent.js
+nono run --allow-cwd --credential openai -- node my_agent.js
 ```
 
 The Node.js process receives a per-session phantom token. The real API key stays in the keychain, outside the sandbox. The proxy swaps the phantom for the real key on outbound requests.
