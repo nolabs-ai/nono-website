@@ -66,8 +66,8 @@ Don't give the agent your real API keys. nono's [phantom token proxy](/blog/blog
 
 ```bash
 nono run --allow-cwd \
-  --proxy-credential openai \
-  --proxy-credential anthropic \
+  --credential openai \
+  --credential anthropic \
   -- python my_agent.py
 ```
 
@@ -80,17 +80,17 @@ Even if the agent dumps `os.environ`, posts its environment to a log, or is tric
 Agents make mistakes. They delete files, overwrite configs, or leave half-finished changes. nono snapshots the working directory before execution:
 
 ```bash
-nono run --allow-cwd --snapshot -- python my_agent.py
+nono run --allow-cwd --rollback -- python my_agent.py
 ```
 
-After the session, review what changed and decide whether to keep or roll back:
+After the session, find the session ID with `nono rollback list`, then review what changed and decide whether to keep or roll back:
 
 ```bash
 # See what the agent changed
-nono session diff
+nono rollback show <session-id> --diff
 
 # Roll back everything
-nono session rollback
+nono rollback restore <session-id>
 ```
 
 This gives you an undo button for agent execution. See [Undo & Rollback](/undo) for details on the snapshot mechanics.
@@ -115,9 +115,9 @@ A single command combines all layers:
 
 ```bash
 nono run --profile my-agent.json --allow-cwd \
-  --proxy-credential openai \
-  --proxy-credential anthropic \
-  --snapshot \
+  --credential openai \
+  --credential anthropic \
+  --rollback \
   -- python my_agent.py
 ```
 
@@ -144,7 +144,7 @@ nono run --profile codex --allow-cwd -- codex
 List available profiles:
 
 ```bash
-nono profiles list
+nono profile list
 ```
 
 ## Next steps

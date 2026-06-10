@@ -293,7 +293,7 @@ export default function NodeSandboxPage() {
           <p className="text-sm text-muted leading-relaxed">
             Run{" "}
             <code className="px-1 py-0.5 rounded bg-code-bg border border-border font-mono text-xs">
-              nono profiles export node-agent
+              nono profile show node-agent
             </code>{" "}
             to see every path the profile allows.
           </p>

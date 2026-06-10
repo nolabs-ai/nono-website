@@ -35,7 +35,7 @@ nono run --profile claude-code --allow-cwd -- claude
 nono run --allow-cwd --network-profile minimal -- python my_agent.py
 
 # Inject credentials from keychain (real keys never enter the sandbox)
-nono run --allow-cwd --proxy-credential openai -- python my_agent.py`;
+nono run --allow-cwd --credential openai -- python my_agent.py`;
 
 const profileExample = `{
   "meta": { "name": "my-agent", "version": "1.0.0" },
@@ -52,12 +52,12 @@ const profileExample = `{
   },
   "network": {
     "allow_hosts": ["api.openai.com", "api.anthropic.com"],
-    "proxy_credentials": ["openai", "anthropic"]
+    "credentials": ["openai", "anthropic"]
   }
 }`;
 
-const learnExample = `# Trace a process to auto-generate a profile
-nono learn --timeout 60 --json -- python my_agent.py
+const learnExample = `# Run sandboxed and save denied paths as a profile
+nono run --allow-cwd -- python my_agent.py
 
 # Check why a specific path would be blocked
 nono why --path ~/.ssh/id_rsa --op read
@@ -188,17 +188,17 @@ export default function CliPage() {
 
         <GlassCard className="md:col-span-2 p-8">
           <h2 className="text-xl font-bold tracking-tight mb-4">
-            Profiles &amp; Learning
+            Profiles &amp; Discovery
           </h2>
           <div className="text-muted leading-relaxed space-y-4">
             <p>
               Profiles are JSON files that declare exactly what a process is
-              allowed to do. Write them by hand or use{" "}
+              allowed to do. Write them by hand or run a process under{" "}
               <code className="px-1.5 py-0.5 rounded bg-code-bg border border-border font-mono text-xs">
-                nono learn
-              </code>{" "}
-              to trace a process and auto-generate a profile from observed
-              behaviour. Built-in profiles are available for Claude Code, Codex,
+                nono run
+              </code>
+              , which reports every denied path and offers to save them to a
+              profile. Built-in profiles are available for Claude Code, Codex,
               and other AI tools.
             </p>
           </div>

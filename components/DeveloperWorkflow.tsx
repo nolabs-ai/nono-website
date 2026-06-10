@@ -14,7 +14,7 @@ const steps = [
   {
     number: "02",
     title: "Configure",
-    code: "nono profiles export claude-code > my-profile.json",
+    code: "nono profile show claude-code > my-profile.json",
   },
   {
     number: "03",
@@ -24,7 +24,7 @@ const steps = [
   {
     number: "04",
     title: "Review",
-    code: "nono audit --session latest\nnono diff latest",
+    code: "nono audit list\nnono rollback show <session-id> --diff",
   },
 ];
 

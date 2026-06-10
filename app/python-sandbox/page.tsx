@@ -54,7 +54,7 @@ nono run --allow-cwd -- python agent.py
 nono run --allow-cwd --network-profile minimal -- python agent.py
 
 # Inject credentials from keychain (real keys never enter the sandbox)
-nono run --allow-cwd --proxy-credential openai -- python agent.py
+nono run --allow-cwd --credential openai -- python agent.py
 
 # Use a profile with the python_runtime security group
 nono run --profile python-agent.json --allow-cwd -- python agent.py
@@ -327,7 +327,7 @@ export default function PythonSandboxPage() {
           <p className="text-sm text-muted leading-relaxed">
             Each group is auditable &mdash; run{" "}
             <code className="px-1 py-0.5 rounded bg-code-bg border border-border font-mono text-xs">
-              nono profiles export python-agent
+              nono profile show python-agent
             </code>{" "}
             to see exactly which paths are allowed.
           </p>

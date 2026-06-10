@@ -28,27 +28,52 @@ nono --version
 
 ## Choose or create a profile
 
-nono ships with built-in profiles for common AI coding agents. List them:
+A profile defines the filesystem, network, and command access rules for a sandbox. The fastest way to get a hardened, signed profile for a specific agent is to install a pack from the nono registry.
+
+Search the registry for a pack:
 
 ```bash
-nono profiles list
+nono search claude
 ```
 
-Each profile is a JSON file defining filesystem, network, and command access rules. The built-in `claude-code` profile allows access to the current working directory and common development tools while blocking sensitive directories and unrestricted network access.
+Install a pack. This pulls the signed pack and registers its profile — for example, `always-further/claude` provides the `claude-code` profile:
 
-To use a built-in profile:
+```bash
+nono pull always-further/claude
+```
+
+Add `--init` to also copy the pack's project instructions into the current directory:
+
+```bash
+nono pull always-further/claude --init
+```
+
+List installed packs and the profiles available on your system:
+
+```bash
+nono list --installed
+nono profile list
+```
+
+`nono profile list` shows both registry-managed packs and the built-in profiles (`default`, `python-dev`, `node-dev`, `rust-dev`, and more). The `claude-code` profile allows access to the current working directory and common development tools while blocking sensitive directories and unrestricted network access.
+
+To use a profile:
 
 ```bash
 nono run --profile claude-code -- claude
 ```
 
-To create a custom profile, start from a built-in one and modify:
+To create a custom profile, generate a skeleton that extends an existing one:
 
 ```bash
-nono profiles export claude-code > my-profile.json
+nono profile init my-agent --extends claude-code
 ```
 
-Edit `my-profile.json` to add or remove allowed paths, network hosts, and commands. See the [profile reference](/docs) for the full schema.
+Edit the generated JSON to add or remove allowed paths, network domains, and commands, then validate it. See the [profile reference](/docs) for the full schema.
+
+```bash
+nono profile validate my-agent
+```
 
 <Tip>
   Start with a restrictive profile and expand as needed. It is easier to add permissions than to audit what an overly permissive agent accessed.
@@ -68,28 +93,34 @@ This creates a sandbox that:
 2. Blocks access to all other filesystem paths (including `~/.ssh`, `~/.aws`, `~/.config`)
 3. Blocks all outbound network connections by default
 4. Records every operation in the [audit trail](/audit-trail)
-5. Captures a filesystem [snapshot](/undo) before the agent starts
+5. Captures a filesystem [snapshot](/undo) before the agent starts (when run with `--rollback`)
 
 To allow network access to specific hosts:
 
 ```bash
 nono run \
   --allow ~/projects/myapp \
-  --proxy-allow registry.npmjs.org \
-  --proxy-allow api.github.com \
+  --allow-domain registry.npmjs.org \
+  --allow-domain api.github.com \
   -- claude
 ```
 
 <Warning>
-  Never use `--trust-unsigned` in production. This flag bypasses [instruction file verification](/provenance) and should only be used during initial setup.
+  Never use `--trust-override` in production. This flag bypasses [instruction file verification](/provenance) and should only be used during initial setup.
 </Warning>
 
 ## Review the audit log
 
-After the session ends, review what the agent did:
+After the session ends, list recent sandboxed sessions:
 
 ```bash
-nono audit --session latest
+nono audit list
+```
+
+Then show what a given session did, using its ID:
+
+```bash
+nono audit show <id>
 ```
 
 This shows every file read, file write, network connection attempt, and command execution. Violations (denied operations) are highlighted.
@@ -97,21 +128,27 @@ This shows every file read, file write, network connection attempt, and command 
 For a machine-readable format:
 
 ```bash
-nono audit --session latest --format json
+nono audit show <id> --json
 ```
 
 ## Undo if needed
 
-If the agent made unwanted changes, undo the entire session:
+If you ran the agent with `--rollback` and it made unwanted changes, restore the session. First list rollback sessions:
 
 ```bash
-nono undo latest
+nono rollback list
 ```
 
-This restores every file to its pre-session state using the SHA-256 content-addressed [snapshot](/undo). You can also review the diff before undoing:
+Then restore every file to its pre-session state using the SHA-256 content-addressed [snapshot](/undo):
 
 ```bash
-nono diff latest
+nono rollback restore <id>
+```
+
+You can also review the diff before restoring:
+
+```bash
+nono rollback show <id> --diff
 ```
 
 ## Runtime supervision
@@ -119,7 +156,7 @@ nono diff latest
 For workflows that require dynamic permission expansion, enable the [runtime supervisor](/runtime-supervisor):
 
 ```bash
-nono run --profile claude-code --supervisor terminal -- claude
+nono run --profile claude-code --capability-elevation -- claude
 ```
 
 When the agent tries to access a resource outside its sandbox, nono prompts you in the terminal. You can approve, deny, or approve-always for the session duration. All supervisor decisions are recorded in the audit trail.

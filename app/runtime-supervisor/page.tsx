@@ -42,8 +42,8 @@ $ nono run --supervised --allow ~/projects/myapp -- claude
 # Combine with credential injection via reverse proxy
 $ nono run --supervised \\
     --allow ~/projects/myapp \\
-    --proxy-credential openai \\
-    --proxy-credential anthropic \\
+    --credential openai \\
+    --credential anthropic \\
     -- claude
 
 # Or inject credentials as environment variables
@@ -124,7 +124,7 @@ export default function RuntimeSupervisorPage() {
           <p className="text-sm text-muted leading-relaxed">
             Secrets are loaded from the system keystore (macOS Keychain, Linux
             Secret Service) and injected via a reverse proxy
-            (<code className="px-1 py-0.5 rounded bg-code-bg border border-border font-mono text-xs">--proxy-credential</code>)
+            (<code className="px-1 py-0.5 rounded bg-code-bg border border-border font-mono text-xs">--credential</code>)
             or as environment variables
             (<code className="px-1 py-0.5 rounded bg-code-bg border border-border font-mono text-xs">--env-credential</code>).
             The reverse proxy approach ensures the agent never sees raw API tokens.
