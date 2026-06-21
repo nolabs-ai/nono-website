@@ -1,9 +1,9 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import Pillars from "@/components/Pillars";
-import SdkPreview from "@/components/SdkPreview";
+import GetStarted from "@/components/GetStarted";
+import SupportedAgents from "@/components/SupportedAgents";
+import ScaleBand from "@/components/ScaleBand";
 import Testimonials from "@/components/Testimonials";
-import CtaBanner from "@/components/CtaBanner";
 import Footer from "@/components/Footer";
 import testimonials from "@/data/testimonials.json";
 import { type Testimonial } from "@/types/testimonial";
@@ -16,12 +16,12 @@ export default function Home() {
       <Header />
       <main>
         <Hero />
+        <GetStarted />
         <div className="h-px bg-border" />
-        <Pillars />
-        <SdkPreview />
+        <SupportedAgents />
         <div className="h-px bg-border" />
+        <ScaleBand />
         <Testimonials testimonials={testimonialItems} />
-        <CtaBanner />
       </main>
       <Footer />
     </>

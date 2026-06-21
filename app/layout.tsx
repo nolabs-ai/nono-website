@@ -2,7 +2,14 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import { Inter } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 import WebSiteSchema from "@/components/structured-data/WebSiteSchema";
 import SoftwareApplicationSchema from "@/components/structured-data/SoftwareApplicationSchema";
 import OrganizationSchema from "@/components/structured-data/OrganizationSchema";
@@ -150,7 +157,7 @@ export default function RootLayout({
         </Script>
       </head>
       <body
-        className={`${GeistSans.variable} ${GeistMono.variable} ${GeistMono.className} antialiased`}
+        className={`${inter.variable} ${GeistSans.variable} ${GeistMono.variable} ${inter.className} antialiased`}
       >
         {children}
         <Script

@@ -18,8 +18,8 @@ interface CtaBannerProps {
 }
 
 export default function CtaBanner({
-  title = "Start securing your AI agents",
-  description = "Kernel-level isolation, cryptographic audit trails, and atomic rollbacks. Open source and ready to deploy.",
+  title = "Run your first agent in seconds",
+  description = "Install nono, pull a signed profile, and launch your agent in a least-privilege sandbox. No daemon, no container, no VM. Open source under Apache-2.0.",
   primary = {
     label: "Get Started",
     href: `${DOCS_URL}/cli/getting_started/installation`,

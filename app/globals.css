@@ -90,17 +90,30 @@
   --color-terminal-bg: var(--terminal-bg);
   --color-terminal-text: var(--terminal-text);
   --color-terminal-border: var(--terminal-border);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Inter is the primary UI typeface. `font-mono` is intentionally mapped to
+     Inter too, so the many existing `font-mono` UI usages render in Inter
+     without touching every file. Real code stays monospace via the
+     `code, kbd, samp, pre` rule below (Geist Mono). */
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-inter);
+  --font-code: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   font-synthesis: none;
   letter-spacing: -0.01em;
+}
+
+/* Real code is always monospace, regardless of any `font-mono` UI mapping. */
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-code), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
 }
 
 html {
@@ -161,4 +174,14 @@ table td {
 
 table tr:last-child td {
   border-bottom: none;
+}
+
+/* ─── Utilities ─── */
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
