@@ -77,7 +77,7 @@ export default function GetStarted() {
           </div>
           <div className="space-y-4">
             <Step
-              label="Recommended"
+              label="curl"
               command="curl -fsSL https://nono.sh/install.sh | sh"
             />
             <Step label="Homebrew" command="brew install nono" />
