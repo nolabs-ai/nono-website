@@ -22,7 +22,7 @@ const quickStart = `package main
 
 import (
 	"log"
-	"github.com/always-further/nono-go"
+	"github.com/nolabs-ai/nono-go"
 )
 
 func main() {
@@ -50,7 +50,7 @@ const queryCode = `package main
 import (
 	"fmt"
 	"log"
-	"github.com/always-further/nono-go"
+	"github.com/nolabs-ai/nono-go"
 )
 
 func main() {
@@ -80,8 +80,8 @@ export default function GoSdkPage() {
     <SdkPageLayout
       language="Go"
       packageName="nono-go"
-      installCommand="go get github.com/always-further/nono-go"
-      registryUrl="https://pkg.go.dev/github.com/always-further/nono-go"
+      installCommand="go get github.com/nolabs-ai/nono-go"
+      registryUrl="https://pkg.go.dev/github.com/nolabs-ai/nono-go"
       registryName="pkg.go.dev"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

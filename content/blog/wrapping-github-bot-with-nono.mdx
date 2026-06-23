@@ -17,7 +17,7 @@ That's what [nono](https://nono.sh) does. This post walks through how I used it 
 
 ## The Bot
 
-[gitbot](https://github.com/always-further/gitbot-nono) is a GitHub webhook server that receives `issues.opened` events, assembles context from project documentation and recent issues, calls Gemini 2.5 Flash to generate a triage decision, and posts a label and comment back to GitHub. It works with any GitHub repo — you point it at yours via environment variables and edit `GEMINI.md` to match your project's triage rules.
+[gitbot](https://github.com/nolabs-ai/gitbot-nono) is a GitHub webhook server that receives `issues.opened` events, assembles context from project documentation and recent issues, calls Gemini 2.5 Flash to generate a triage decision, and posts a label and comment back to GitHub. It works with any GitHub repo — you point it at yours via environment variables and edit `GEMINI.md` to match your project's triage rules.
 
 It's about 400 lines of Python across four files:
 
@@ -37,7 +37,7 @@ Each of these is a potential attack surface. Let's look at how nono addresses ea
 You don't need nono to run gitbot. The bot works standalone — nono adds security hardening on top. To get it running:
 
 ```bash
-git clone https://github.com/always-further/gitbot-nono && cd gitbot-nono
+git clone https://github.com/nolabs-ai/gitbot-nono && cd gitbot-nono
 uv sync
 cp .env.example .env   # fill in WEBHOOK_SECRET, GITHUB_REPO, and optionally DOCS_URL
 export GITHUB_TOKEN=ghp_...
@@ -45,7 +45,7 @@ export GEMINI_API_KEY=...
 .venv/bin/python3 bot.py
 ```
 
-Edit `GEMINI.md` to match your project — update the project name, security contact, and label taxonomy. Set `DOCS_URL` in `.env` if you want the LLM to have your project's documentation as context when triaging. See the [README](https://github.com/always-further/gitbot-nono#readme) for full setup instructions including webhook configuration.
+Edit `GEMINI.md` to match your project — update the project name, security contact, and label taxonomy. Set `DOCS_URL` in `.env` if you want the LLM to have your project's documentation as context when triaging. See the [README](https://github.com/nolabs-ai/gitbot-nono#readme) for full setup instructions including webhook configuration.
 
 The rest of this post is about what happens when you wrap this bot with nono.
 
@@ -350,12 +350,12 @@ The sandbox profile and trust verification required no code changes to the bot t
 
 The result is a bot where real credentials never enter the process, network access is kernel-enforced to a specific allow-list, and the LLM's instruction file is cryptographically signed.
 
-The code is at [github.com/always-further/gitbot-nono](https://github.com/always-further/gitbot-nono). The nono docs are at [nono.sh/docs](https://nono.sh/docs).
+The code is at [github.com/nolabs-ai/gitbot-nono](https://github.com/nolabs-ai/gitbot-nono). The nono docs are at [nono.sh/docs](https://nono.sh/docs).
 
 ## Next steps
 
 - **[OS Sandbox](/os-sandbox)** — How Landlock and Seatbelt enforcement works under the hood
 - **[Provenance](/provenance)** — Sigstore signing and trust verification beyond local keypairs
 - **[Credential Injection](/blog/blog-credential-injection)** — The phantom token pattern in detail
-- **[gitbot-nono](https://github.com/always-further/gitbot-nono)** — The bot's source code
+- **[gitbot-nono](https://github.com/nolabs-ai/gitbot-nono)** — The bot's source code
 - **[Docs](https://nono.sh/docs)** — Full CLI reference

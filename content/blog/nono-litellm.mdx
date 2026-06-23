@@ -120,7 +120,7 @@ nono takes a different approach: assume the code inside the sandbox might be hos
 
 The malicious litellm code runs. Its credential stealer finds no credentials. Its exfiltration attempt hits a wall. Its malware dropper can't write outside the project directory. The application continues to work normally, calling the LLM APIs it was designed to use.
 
-Supply chain attacks succeed because we give every dependency the same privileges as our own code. nono changes that equation. For a hands-on walkthrough, see [how we sandboxed a GitHub bot](/blog/wrapping-github-bot-with-nono) with all three layers. The project is on [GitHub](https://github.com/always-further/nono) — star it if you want to follow development.
+Supply chain attacks succeed because we give every dependency the same privileges as our own code. nono changes that equation. For a hands-on walkthrough, see [how we sandboxed a GitHub bot](/blog/wrapping-github-bot-with-nono) with all three layers. The project is on [GitHub](https://github.com/nolabs-ai/nono) — star it if you want to follow development.
 
 ## Next steps
 
@@ -128,4 +128,4 @@ Supply chain attacks succeed because we give every dependency the same privilege
 - **[Credential Injection](/blog/blog-credential-injection)** — The phantom token pattern in detail
 - **[Wrapping a GitHub Bot](/blog/wrapping-github-bot-with-nono)** — End-to-end walkthrough of sandboxing an LLM agent
 - **[Docs](https://nono.sh/docs)** — Full CLI reference
-- **[GitHub](https://github.com/always-further/nono)** — Source code
+- **[GitHub](https://github.com/nolabs-ai/nono)** — Source code

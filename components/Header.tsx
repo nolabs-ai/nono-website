@@ -253,7 +253,7 @@ export default function Header() {
             <DiscordIcon size={16} />
           </a>
           <a
-            href="https://github.com/always-further/nono"
+            href="https://github.com/nolabs-ai/nono"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-mono border border-border text-foreground hover:bg-surface transition-colors"
@@ -352,7 +352,7 @@ export default function Header() {
                 <DiscordIcon size={18} />
               </a>
               <a
-                href="https://github.com/always-further/nono"
+                href="https://github.com/nolabs-ai/nono"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted hover:text-foreground transition-colors flex items-center gap-2 text-xs font-mono"

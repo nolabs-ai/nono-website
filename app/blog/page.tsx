@@ -90,7 +90,7 @@ export default function BlogIndexPage() {
               </GradientButton>
               <GradientButton
                 variant="outline"
-                href="https://github.com/always-further/nono"
+                href="https://github.com/nolabs-ai/nono"
                 external
               >
                 View on GitHub

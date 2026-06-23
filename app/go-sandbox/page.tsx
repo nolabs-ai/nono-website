@@ -79,7 +79,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"github.com/always-further/nono-go"
+	"github.com/nolabs-ai/nono-go"
 )
 
 func main() {
@@ -127,7 +127,7 @@ const stateCode = `package main
 import (
 	"fmt"
 	"log"
-	"github.com/always-further/nono-go"
+	"github.com/nolabs-ai/nono-go"
 )
 
 func main() {

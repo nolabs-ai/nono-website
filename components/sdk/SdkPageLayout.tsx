@@ -138,7 +138,7 @@ export function SdkPageLayout({
               <GradientButton href={DOCS_URL} external>Read the Docs</GradientButton>
               <GradientButton
                 variant="outline"
-                href="https://github.com/always-further/nono"
+                href="https://github.com/nolabs-ai/nono"
                 external
               >
                 View on GitHub

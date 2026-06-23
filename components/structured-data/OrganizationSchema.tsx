@@ -6,7 +6,7 @@ export default function OrganizationSchema() {
     url: "https://alwaysfurther.ai",
     logo: "https://nono.sh/logo.png",
     sameAs: [
-      "https://github.com/always-further",
+      "https://github.com/nolabs-ai",
       "https://x.com/alwaysfurtherAI",
       "https://bsky.app/profile/alwaysfurther.ai",
     ],

@@ -59,7 +59,7 @@ const columns: FooterColumn[] = [
       { label: "Docs", href: DOCS_URL, external: true },
       {
         label: "GitHub",
-        href: "https://github.com/always-further/nono",
+        href: "https://github.com/nolabs-ai/nono",
         external: true,
       },
       {
@@ -150,7 +150,7 @@ export default function Footer() {
               <BookOpen size={16} />
             </a>
             <a
-              href="https://github.com/always-further/nono"
+              href="https://github.com/nolabs-ai/nono"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-foreground transition-colors"
@@ -170,7 +170,7 @@ export default function Footer() {
               <DiscordIcon size={16} />
             </a>
             <a
-              href="https://github.com/always-further/nono/blob/main/LICENSE"
+              href="https://github.com/nolabs-ai/nono/blob/main/LICENSE"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-foreground transition-colors"

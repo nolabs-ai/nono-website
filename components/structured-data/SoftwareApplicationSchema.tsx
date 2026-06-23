@@ -11,7 +11,7 @@ export default function SoftwareApplicationSchema() {
       priceCurrency: 'USD',
     },
     url: 'https://nono.sh',
-    downloadUrl: 'https://github.com/always-further/nono',
+    downloadUrl: 'https://github.com/nolabs-ai/nono',
     description:
       'OS-enforced capability sandbox for running untrusted AI agents. Kernel-level isolation using Seatbelt (macOS), Landlock (Linux), and WSL2 (Windows).',
     author: {

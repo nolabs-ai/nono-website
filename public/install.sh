@@ -12,7 +12,7 @@
 
 set -eu
 
-REPO="always-further/nono"
+REPO="nolabs-ai/nono"
 BIN="nono"
 
 err()  { printf 'error: %s\n' "$1" >&2; exit 1; }
@@ -111,4 +111,4 @@ case ":$PATH:" in
 esac
 
 info ""
-info "Get started:  nono run --profile always-further/opencode -- opencode"
+info "Get started:  nono run --profile nolabs-ai/opencode -- opencode"
