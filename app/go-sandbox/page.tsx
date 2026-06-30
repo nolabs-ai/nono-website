@@ -191,7 +191,16 @@ export default function GoSandboxPage() {
               {" "}directly.
             </p>
             <p>
-              nono enforces isolation at the kernel level using Landlock (Linux
+              nono enforces isolation at the kernel level using{" "}
+              <a
+                href="https://landlock.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent hover:text-accent-hover transition-colors"
+              >
+                Landlock
+              </a>{" "}
+              (Linux
               and Windows/WSL2) and Seatbelt (macOS). The sandbox is irrevocable &mdash; once
               applied, it cannot be loosened, even by the sandboxed process
               itself. This applies to the process and all its children.

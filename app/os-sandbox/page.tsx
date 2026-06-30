@@ -215,7 +215,15 @@ export default function OsSandboxPage() {
           </h2>
           <div className="text-muted leading-relaxed space-y-4">
             <p>
-              Landlock is a Linux Security Module introduced in kernel 5.13.
+              <a
+                href="https://landlock.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent hover:text-accent-hover transition-colors"
+              >
+                Landlock
+              </a>{" "}
+              is a Linux Security Module introduced in kernel 5.13.
               Unlike AppArmor or SELinux, which require root privileges and
               system-wide policy configuration, Landlock can be applied by any
               unprivileged process to restrict its own capabilities. This makes

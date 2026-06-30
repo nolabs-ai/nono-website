@@ -96,7 +96,16 @@ export default function GoSdkPage() {
               <code className="px-1.5 py-0.5 rounded bg-code-bg border border-border font-mono text-xs">
                 nono.Apply(caps)
               </code>
-              , the SDK applies kernel-level Landlock rules (Linux) or Seatbelt
+              , the SDK applies kernel-level{" "}
+              <a
+                href="https://landlock.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent hover:text-accent-hover transition-colors"
+              >
+                Landlock
+              </a>{" "}
+              rules (Linux) or Seatbelt
               profiles (macOS) to the current process. The sandbox is irrevocable
               &mdash; it cannot be loosened after application. Static libraries
               for macOS (arm64, amd64) and Linux (amd64, arm64) are bundled in

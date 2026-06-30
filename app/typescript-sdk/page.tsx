@@ -71,7 +71,16 @@ export default function TypeScriptSdkPage() {
               <code className="px-1.5 py-0.5 rounded bg-code-bg border border-border font-mono text-xs">
                 apply(caps)
               </code>
-              , the SDK applies kernel-level Landlock rules (Linux) or Seatbelt
+              , the SDK applies kernel-level{" "}
+              <a
+                href="https://landlock.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent hover:text-accent-hover transition-colors"
+              >
+                Landlock
+              </a>{" "}
+              rules (Linux) or Seatbelt
               profiles (macOS) to the Node.js process. The sandbox is irrevocable
               and inherited by all child processes.
             </p>

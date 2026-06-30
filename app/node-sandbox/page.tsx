@@ -180,8 +180,15 @@ export default function NodeSandboxPage() {
             <p>
               nono applies the sandbox before the Node.js process starts. On
               Linux and Windows (WSL2), it uses{" "}
-              <strong className="text-foreground">Landlock LSM</strong> to
-              set kernel-enforced filesystem and network rules. On macOS, it
+              <a
+                href="https://landlock.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-foreground hover:text-accent transition-colors"
+              >
+                Landlock LSM
+              </a>{" "}
+              to set kernel-enforced filesystem and network rules. On macOS, it
               uses{" "}
               <strong className="text-foreground">Seatbelt</strong>. By the
               time V8 initialises and your agent code begins executing, the

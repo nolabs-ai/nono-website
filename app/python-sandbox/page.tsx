@@ -213,8 +213,15 @@ export default function PythonSandboxPage() {
           <div className="text-muted leading-relaxed space-y-4">
             <p>
               nono operates below the Python interpreter. It uses{" "}
-              <strong className="text-foreground">Landlock LSM</strong> on
-              Linux and Windows (WSL2), and{" "}
+              <a
+                href="https://landlock.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-foreground hover:text-accent transition-colors"
+              >
+                Landlock LSM
+              </a>{" "}
+              on Linux and Windows (WSL2), and{" "}
               <strong className="text-foreground">Seatbelt</strong> on macOS,
               to restrict what the entire process tree can access at the kernel
               level. By the time the Python interpreter starts, the sandbox is
