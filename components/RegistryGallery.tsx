@@ -57,12 +57,12 @@ const publishStages: PublishStage[] = [
 
 async function fetchPacks(): Promise<RegistryPack[]> {
   try {
-    const res = await fetch(`${REGISTRY_URL}/api/v1/packages/recent`, {
+    const res = await fetch(`${REGISTRY_URL}/api/v1/packages/popular`, {
       next: { revalidate: 3600 },
     });
     if (!res.ok) return [];
-    const data = (await res.json()) as RegistryPack[];
-    return data.slice(0, 3);
+    const data = (await res.json()) as { packages: RegistryPack[] };
+    return data.packages.slice(0, 3);
   } catch {
     return [];
   }
