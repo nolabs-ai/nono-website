@@ -27,12 +27,13 @@ export async function generateMetadata({
   const { slug } = await params;
   try {
     const post = getPostBySlug(slug);
+    const seoTitle = post.seoTitle ?? post.title;
     return {
-      title: post.title,
+      title: seoTitle,
       description: post.description,
       alternates: { canonical: `/blog/${slug}` },
       openGraph: {
-        title: post.title,
+        title: seoTitle,
         description: post.description,
         type: "article",
         publishedTime: post.date,
@@ -51,7 +52,7 @@ export async function generateMetadata({
       },
       twitter: {
         card: "summary_large_image",
-        title: post.title,
+        title: seoTitle,
         description: post.description,
         images: post.image ? [post.image] : [`/blog/${slug}/opengraph-image`],
       },

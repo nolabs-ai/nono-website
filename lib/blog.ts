@@ -22,6 +22,7 @@ export function getAllPosts(): BlogPost[] {
       return {
         slug,
         title: data.title as string,
+        seoTitle: data.seoTitle as string | undefined,
         date: data.date as string,
         description: data.description as string,
         author: data.author as string,
@@ -43,6 +44,7 @@ export function getPostBySlug(slug: string): BlogPostWithContent {
   return {
     slug,
     title: data.title as string,
+    seoTitle: data.seoTitle as string | undefined,
     date: data.date as string,
     description: data.description as string,
     author: data.author as string,
