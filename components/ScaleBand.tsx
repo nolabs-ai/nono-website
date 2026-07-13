@@ -1,5 +1,6 @@
 import { Layers, Box, KeyRound, FileCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import CompanyLogos from "@/components/CompanyLogos";
 
 interface Pillar {
   icon: LucideIcon;
@@ -50,6 +51,10 @@ export default function ScaleBand() {
           model — the same composable policy, per-tool sandboxing, credential
           protection, and fully auditable execution.
         </p>
+      </div>
+
+      <div className="max-w-4xl mx-auto mt-10">
+        <CompanyLogos />
       </div>
 
       <div className="max-w-4xl mx-auto mt-10 grid sm:grid-cols-2 md:grid-cols-4 gap-px bg-border border border-border">
