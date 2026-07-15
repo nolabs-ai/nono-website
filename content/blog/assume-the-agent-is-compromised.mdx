@@ -1,0 +1,45 @@
+---
+title: "Assume the agent is compromised. Now what?"
+seoTitle: "Per-invocation capability brokering for AI agents: assume compromise, contain everything"
+date: "2026-07-16"
+description: "The thesis behind nono, the five proofs we are publishing this month, and an open invitation to the teams deploying agents against systems that matter."
+excerpt: "Prompt injection is not solved, and a serious deployment does not bet the database on the filter. The question that survives is what a compromised agent can actually do. This post lays out the answer nono is built around, the five deep dives proving it, and an invitation to design partners running agents where they can touch something that matters."
+author: "Sal Kimmich"
+authorRole: "Solutions Architect"
+tags: ["AI agents", "security", "sandboxing", "nono", "open source"]
+---
+Every security conversation about AI agents eventually arrives at the same uncomfortable fact: prompt injection is not solved. An agent that ingests untrusted text all day, from documents, tickets, web pages, and tool results, will sometimes do what the text says. You can filter, you can classify, you can red-team, and you should. But a serious deployment does not bet the database on the filter. It assumes the filter fails, and asks the only question that survives contact with that assumption:
+
+When the agent is compromised, what can it actually do?
+
+That question is what nono exists to answer, and the answer has a specific shape. Not a sandbox around the agent's process, because an agent's process lives for hours and needs broad access to do its job. The enforcement unit has to be smaller: the individual tool call. Every command the agent runs, every request it makes, every file it touches is an invocation, and every invocation gets exactly the capability it needs, brokered from outside the agent's reach, for exactly as long as it needs it. We call this a per-invocation capability broker, and it is Apache-2.0, 3,000+ stars, 60+ contributors, and the reference implementation for SAF-M-74.
+
+Contained compromise decomposes into three properties, and over the next weeks we are publishing a deep dive on each, every claim cited to a merged PR or a file on main.
+
+**What the agent holds: nothing.** Credentials are injected by a broker the agent cannot reach, used once, zeroed from memory. The agent's environment contains placeholders. This survives even auth schemes with no injectable seam: AWS SigV4, where the broker must construct the signature itself. And the next move attacks the credential's existence, not just its possession: workload identity that expires in minutes and is issued only to attested processes.
+
+**What the agent reaches: what policy names, nothing else.** Network closed by default at the kernel, an explicit deny list evaluated above the allowlist, configuration that fails closed on ambiguity. The exfiltration channel, not the injection, is the controllable variable, and every denied probe becomes an audit event before any data moves.
+
+**What the record shows: everything, tamper-evident.** The audit trail is written outside the sandbox by a supervisor the agent cannot touch: sequence-numbered, hash-chained, Merkle-committed, verifiable with one command. A process that daemonizes to escape supervision stays mediated and stays in the record.
+
+The honest boundary runs through all three: nono does not prevent compromise. It bounds what compromise is worth, and proves what happened. Narrower claims than the market makes, and checkable ones, which is the point.
+
+## Watch it under attack
+
+Claims are cheap, so on Tuesday, July 28 at 4pm UK / 11am ET, we are attacking our own system live: a real agent workflow, credentials brokered per invocation, and a live attack attempt while you watch, audit trail catching every move. If something breaks, you see that too. [Register here](https://luma.com/73tz35ak): the stream link goes to registrants.
+
+## Design partners: we want your hardest deployment
+
+Here is the part this post exists to say.
+
+The code is open and stays open. What we are offering a small number of teams is us: the maintainers, the roadmap, and deployment engineering, pointed at your environment.
+
+We are looking for teams deploying agents against systems that matter: production databases, internal APIs, customer data, cloud infrastructure. If you operate under regulatory or sovereignty constraints, better still: those constraints are exactly the design pressure we want.
+
+What a design partnership looks like: a named use case we build against, direct founder access, weekly working sessions, and your production environment as the design spec. Your constraints become roadmap input, and that loop is not theoretical: the AWS SigV4 support above exists because one practitioner raised a hard question in our Discord, and it shipped eight weeks later. Design partners get that loop with priority and intent.
+
+The full structure, the five pillars we build against, and the application form are on the design partners page. If you are not sure yet, there is a thirty-minute founder call with no commitment attached.
+
+[Become a design partner](https://nolabs.ai/design-partners)
+
+Tell us what your agents touch and what keeps you from letting them touch more. That second thing is what we build.

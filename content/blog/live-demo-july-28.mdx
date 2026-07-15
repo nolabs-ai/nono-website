@@ -1,0 +1,27 @@
+---
+title: "On July 28, we attack our own agent. Live."
+seoTitle: "Live demo July 28: attacking a per-invocation capability broker"
+date: "2026-07-16"
+description: "A live attack attempt against a running nono deployment: per-invocation credential brokering, tamper-evident audit, and what an attacker actually gets."
+excerpt: "Most agent security content shows you a policy file. On July 28 we show you an attack: a live attempt against a running nono deployment, credentials brokered per invocation, every move landing in a tamper-evident audit trail. Register and watch what an attacker actually gets."
+author: "Sal Kimmich"
+authorRole: "Solutions Architect"
+tags: ["AI agents", "security", "nono", "demo", "open source"]
+---
+Most agent security content shows you a policy file. On July 28 we show you an attack.
+
+The setup: an AI agent runs a real workflow with real credentials in play. API calls, tool execution, file access. Every credential is brokered per invocation: injected by a broker the agent cannot reach, used once, zeroed from memory after use. Every operation lands in a tamper-evident audit trail, hash-chained from the policy decision down to the syscall.
+
+Then we attack it. Live, against the running system, while you watch.
+
+Aleksy Siek, founding maintainer of nono, runs the full flow end to end. You see what the attacker sees, what the policy engine decides, and what the audit log records. No slides standing in for software. If something breaks, you see that too.
+
+nono is an Apache-2.0 per-invocation capability broker for agentic AI systems: 3,000+ GitHub stars, 60+ contributors, reference implementation for SAF-M-74. This is what it looks like running.
+
+**Tuesday July 28, 4pm UK / 11am ET. Free, streamed live.**
+
+Register at [luma.com/73tz35ak](https://luma.com/73tz35ak). The stream link goes straight to registrants. Bring questions: we take them live.
+
+---
+
+*This post is part of a series on agent infrastructure that assumes compromise. Start with the thesis: [Assume the agent is compromised. Now what?](/blog/assume-the-agent-is-compromised) Running agents where they can touch something that matters? [Become a design partner](https://nolabs.ai/design-partners).*
