@@ -1,0 +1,66 @@
+---
+title: "Your logs are testimony. Make them evidence."
+seoTitle: "Tamper-evident audit logging for AI agents: hash chains, Merkle commitments, and verification"
+date: "2026-08-03"
+description: "How nono's audit trail survives the incident it records: hash-chained events, Merkle-committed sessions, supervision that survives daemonization, and one command to verify all of it."
+excerpt: "Every agent framework logs. The sharper question is whether the log survives the incident it records. nono's audit trail is written outside the sandbox, hash-chained per event, Merkle-committed per session, and verifiable with one command. Here is the construction, the honest boundary, and the verifier."
+author: "Sal Kimmich"
+authorRole: "Solutions Architect"
+tags: ["AI agents", "security", "audit", "nono", "open source"]
+---
+Every agent framework logs. Ask a sharper question: when the incident happens, does the log survive it?
+
+An audit trail written by the process being attacked is a witness the attacker can silence. Two evasion patterns do most of the silencing. The compromised workload edits or truncates its own history, so the record stops exactly where it became interesting. Or the workload walks away from the recorder entirely: a process daemonizes, orphans itself, and keeps operating outside supervision. Either way, what you bring to the incident review is testimony from a witness the attacker already reached.
+
+Evidence has to be built differently, and it has to be built before the incident, because the incident is precisely the event it must survive. Here is how nono builds it, from the bottom up.
+
+## Written from outside the blast radius
+
+The first decision is placement. Audit events are not written by the agent, its runtime, or anything inside the sandbox. They are recorded by the trusted parent process, the supervisor, which observes the session from outside the enforcement boundary. The agent, and anything the agent spawns, has no write path to its own record. Tampering with the log from inside the sandbox is not hard: it is not reachable.
+
+## Chained per event, committed per session
+
+Placement stops the workload from editing the record. Construction makes any other edit visible.
+
+Every audit event carries three things: a monotonic sequence number, a rolling SHA-256 chain hash that binds it to every event before it (with domain separation, so a hash from one context cannot impersonate a hash from another), and a Merkle leaf hash. Delete an event and the sequence breaks. Modify one and every chain hash after it stops verifying. Reorder them and both break at once.
+
+When the session ends, the supervisor commits an integrity summary: the event count, the final chain head, and the Merkle root over all event leaves. The session is then appended to a local ledger that is itself chain-linked, so a whole session cannot quietly vanish from history either.
+
+For sessions that need a stronger statement than "internally consistent," there is keyed attestation: run with `--audit-sign-key` and the supervisor signs once, at finalization, over the completed session's audit root and context, producing a DSSE bundle stored alongside the session. That signature answers a specific question: did the holder of this key attest to this exact completed record.
+
+## The process that walks away does not walk away from the record
+
+Now the second evasion pattern. Daemonizing out from under a supervisor is one of the oldest tricks in the book: orphan yourself, get re-parented, keep working where the recorder cannot see.
+
+In nono, orphaned descendants remain in the supervisor's ancestry and their syscall mediation continues. The child that abandons its parent does not abandon the policy engine, and it does not exit the audit trail. Combined with the construction above, both standard ways an incident erases its own history are closed: the history cannot be rewritten undetected, and the writer cannot be evaded by process games.
+
+## Verify it. Do not trust it.
+
+Everything above would be marketing if you had to take our word for it. You do not:
+
+```bash
+# Verify the session's audit integrity and its inclusion in the ledger
+nono audit verify 20260728-160412-88231
+
+# Pin attestation verification to an expected signer key
+nono audit verify 20260728-160412-88231 --public-key-file ./audit-signing-key.pub
+
+# Machine-readable, for your compliance tooling
+nono audit verify 20260728-160412-88231 --json
+```
+
+Verification checks the event chain, the Merkle commitment against the stored integrity summary, the session's ledger inclusion, and, when an attestation is present, the keyed signature and the session id bound into it.
+
+## Where the claim ends
+
+Precision matters more in this feature than anywhere else, so here is the boundary, stated plainly.
+
+The signature is per session, not per event: `--audit-sign-key` signs once at finalization over the audit root, not each line as it lands. Verification without a pinned key checks the signature against the public key recorded in the session itself, which means an attacker who can rewrite the entire session could also rewrite the embedded key and remain self-consistent: `--public-key-file` is the path that closes that, by pinning verification to a key the attacker does not control. And the integrity model is local: external anchoring and independent timestamping are future work, stated as such in the security model documentation.
+
+That is the shape of an honest tamper-evidence claim: kernel-enforced sandboxing, supervisor-recorded events, tamper-evident within a precisely described model, with the remaining gap named instead of papered over. The construction, the boundary, and the verifier are all in an Apache-2.0 codebase. Checking our claims is a command, not a meeting.
+
+**Three takeaways.** A log the attacked process can write to is testimony; placement outside the sandbox plus per-event chaining makes it evidence. Daemonization does not exit the record: orphaned descendants stay mediated and audited. And the whole claim is verifiable: `nono audit verify`, pin the key, read the source.
+
+---
+
+*This post is part of a series on agent infrastructure that assumes compromise. Start with the thesis: [Assume the agent is compromised. Now what?](/blog/assume-the-agent-is-compromised) Running agents where they can touch something that matters? [Become a design partner](https://nolabs.ai/design-partners).*
