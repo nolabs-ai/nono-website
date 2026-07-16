@@ -1,7 +1,7 @@
 ---
 title: "AWS has no seam. That's good."
 seoTitle: "AWS SigV4 credential brokering for AI agents: structural non-possession"
-date: "2026-08-07"
+date: "2026-08-04"
 description: "SigV4 signs the request itself, so there is no header to inject. Brokering it means the proxy signs per invocation, and the agent holds nothing."
 excerpt: "Bearer tokens have a seam: a string you can bolt on at a proxy. AWS SigV4 does not. Brokering it means holding the signing material and constructing the signature per invocation, with the agent holding nothing. The strongest proof yet that structural non-possession survives the hardest mainstream auth scheme."
 author: "Sal Kimmich"
@@ -57,4 +57,4 @@ Asked in public, designed in public, shipped in public. That is the development 
 
 ---
 
-*This post is part of a series on agent infrastructure that assumes compromise. Start with the thesis: [Assume the agent is compromised. Now what?](/blog/assume-the-agent-is-compromised) Running agents where they can touch something that matters? [Become a design partner](https://nolabs.ai/design-partners).*
+*This post is part of a series on agent infrastructure that assumes compromise. The thesis, and where it leads: [Assume the agent is compromised. Now what?](https://nolabs.ai/blog/assume-the-agent-is-compromised)*
