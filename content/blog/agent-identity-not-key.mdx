@@ -8,6 +8,7 @@ author: "Sal Kimmich"
 authorRole: "Solutions Architect"
 tags: ["AI agents", "security", "SPIFFE", "workload identity", "nono", "open source"]
 ---
+
 Somewhere in your agent deployment there is a long-lived credential. An API key in an environment variable, a token in a keychain, a secret in a config file. It was issued months ago, it rotates never, and it is in the possession of the single most manipulable piece of software you run: an agent that ingests untrusted text all day and sometimes does what the text says.
 
 We have spent this year attacking that problem from one side: possession. nono brokers credentials per invocation. The agent makes plain requests; a broker it cannot reach injects the secret, uses it once, and zeroes it from memory. The agent's environment holds placeholders. Full compromise of the agent yields the ability to make requests through policy, and nothing else. That architecture is shipped, audited to the syscall, and running in production today.
@@ -18,19 +19,23 @@ The next move is to attack the credential itself.
 
 ## Identity instead of secret
 
-SPIFFE inverts the model. Instead of proving "I hold the key," a workload proves "I am this workload": the platform attests the process (its binary, its unix identity, its pod, its node), and an agent called SPIRE issues it a short-lived, automatically rotating identity document, an SVID. Two forms matter here: a JWT-SVID, a signed token asserting the workload's identity for a bounded audience and lifetime, and an X.509-SVID, a certificate for mutual TLS.
+SPIFFE inverts the model. Instead of proving "I hold the key," a workload proves "I am this workload": the platform attests the process, and an agent called SPIRE issues it a short-lived, automatically rotating identity document, an SVID. The form that matters here is the JWT-SVID: a signed token asserting the workload's identity for a bounded audience and a bounded lifetime.
 
-The properties are exactly the ones a long-lived API key lacks. The credential is issued to the workload, not to whoever possesses a string. It expires in minutes, not quarters. Rotation is continuous and automatic, not a ticket in someone's backlog. And it is attested: a process that is not the declared workload does not get one, no matter what it stole.
+The properties are exactly the ones a long-lived API key lacks. The credential is issued to the workload, not to whoever possesses a string. It expires in minutes, not quarters. Rotation is continuous and automatic, not a ticket in someone's backlog. And it is attested: the workload presents no secret to the Workload API, because the SPIRE agent verifies the caller out of band against what the operating system knows about the process, then issues only if those observable properties match the workload's registered selectors.
+
+That last property is worth stating precisely, because it is where the strength actually lives. Attestation binds an identity to a selector match, not to a name. Register a workload by unix uid alone and every process running as that uid satisfies the entry. Register it by binary path and SHA-256 and the bar is considerably higher. SPIFFE gives you the mechanism; the selectors you choose decide what the mechanism is worth.
 
 ## What we built
 
-The work in flight ([PR #1272](https://github.com/nolabs-ai/nono/pull/1272), in review in the open) makes workload identity a first-class credential source for nono's broker routes:
+The work in flight ([PR #1272](https://github.com/nolabs-ai/nono/pull/1272), in review in the open) makes workload identity a first-class credential source for nono's broker routes.
 
-At startup, nono connects to the SPIRE Workload API socket and obtains SVIDs for the supervisor. Fail-closed: no identity, no session. There is no degraded mode where the workload runs unidentified.
+At startup, nono connects to the SPIRE Workload API socket and obtains an SVID for the supervisor. Fail-closed: if the socket is unreachable, the session does not start. There is no degraded mode where the workload runs unidentified.
 
-For JWT-SVID routes, the broker requests a token scoped to the upstream audience and injects it per invocation, exactly as it injects any phantom credential: the sandboxed agent makes a plain request and never sees the token that authenticated it. The token is zeroed from memory after use. Its natural lifetime is minutes; its exposure inside the broker is milliseconds.
+Note which process holds the identity. nono's supervisor is the registered workload, not the agent inside the sandbox. The sandboxed process cannot reach the SPIRE socket at all, and has no credential visibility. The thing being attested and the thing being contained are deliberately different processes.
 
-For X.509-SVID routes, the broker holds the workload's TLS identity in an atomically swappable connector with background rotation: SPIRE re-issues the certificate on its own schedule and the connector swaps mid-flight, no restart, no window where a stale identity lingers because redeployment was inconvenient.
+The broker requests a JWT-SVID scoped to the upstream audience and injects it per invocation, exactly as it injects any phantom credential: the sandboxed agent makes a plain request and never sees the token that authenticated it. Tokens refresh before expiry through the agent cache, and SVID private key material is never written to disk or logged. The division of labor is clean: the SPIRE operator registers the workload entry and configures the agent, and nono's config is just the socket path and what to request.
+
+X.509-SVID mTLS, with a client certificate presented during the handshake and rotated atomically, is the planned next variant. It waits on the TLS-intercept CONNECT path being wired to support it for HTTPS upstreams. Saying so is the point of working in the open: the JWT path is what exists today.
 
 The injection path this rides on is protocol-consistent: HTTP/2 forwarding enforces the same credential rules as HTTP/1.1, with regression tests pinning the parity. And every brokered invocation lands where everything in nono lands: the audit trail, sequence-numbered, hash-chained, Merkle-committed, written by a process the agent cannot touch.
 
@@ -38,7 +43,13 @@ Stack the two layers and count what an attacker has to work with. The agent neve
 
 ## Where this goes
 
-This is also the enterprise on-ramp the MCP ecosystem has been circling. SEP-1933, the proposed standard for Workload Identity Federation in MCP, specifies exactly this credential shape: a workload identity token exchanged for an OAuth access token, so an MCP client authenticates as an attested workload instead of carrying a provisioned secret. The proposal's client conformance suite merged upstream this month. A broker that already produces per-invocation JWT-SVIDs is most of the way to that exchange.
+Direct bearer injection is one of two paths, and the second is the more interesting one.
+
+Some token endpoints do not want a raw JWT-SVID. They want it as an OAuth2 client assertion: present the workload token under the `urn:ietf:params:oauth:grant-type:jwt-bearer` grant defined in RFC 7523, receive a short-lived OAuth2 access token in exchange. nono does the whole exchange, caches the resulting token until near expiry, and injects the access token rather than the SVID. There is no client secret in that flow at all: the JWT-SVID is the credential, and the workload's identity is what the token endpoint is trusting.
+
+That pattern should look familiar to anyone following the MCP authorization work. SEP-1933, the proposed standard for Workload Identity Federation in MCP, specifies exactly this: the JWT Bearer grant from RFC 7523 Section 2.1, an assertion carrying the workload's credential, and an issuer the authorization server discovers through OpenID Connect Discovery. The proposal chose OIDC Discovery precisely because Kubernetes and SPIFFE-based systems already speak it. Its client conformance suite merged upstream this month.
+
+So the shape a proposed standard is converging on for MCP is the shape a broker can already speak today. That is a good position to contribute a reference implementation from, and we intend to.
 
 ## Come watch us attack it
 
