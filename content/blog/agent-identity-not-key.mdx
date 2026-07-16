@@ -20,9 +20,7 @@ The next move is to attack the credential itself.
 
 SPIFFE inverts the model. Instead of proving "I hold the key," a workload proves "I am this workload": the platform attests the process (its binary, its unix identity, its pod, its node), and an agent called SPIRE issues it a short-lived, automatically rotating identity document, an SVID. Two forms matter here: a JWT-SVID, a signed token asserting the workload's identity for a bounded audience and lifetime, and an X.509-SVID, a certificate for mutual TLS.
 
-The properties are exactly the ones a long-lived API key lacks. The credential is issued to the workload, not to whoever possesses a string. It expires in minutes, not quarters. Rotation is continuous and automatic, not a ticket in someone's backlog. And it is attested: the workload presents no secret to the Workload API, because the SPIRE agent verifies the caller out of band against what the operating system knows about the process, then issues only if those observable properties match the workload's registered selectors.
-
-That last property is worth stating precisely, because it is where the strength actually lives. Attestation binds an identity to a selector match, not to a name. Register a workload by unix uid alone and every process running as that uid satisfies the entry. Register it by binary path and SHA-256 and the bar is considerably higher. SPIFFE gives you the mechanism; the selectors you choose decide what the mechanism is worth.
+The properties are exactly the ones a long-lived API key lacks. The credential is issued to the workload, not to whoever possesses a string. It expires in minutes, not quarters. Rotation is continuous and automatic, not a ticket in someone's backlog. And it is attested: a process that is not the declared workload does not get one, no matter what it stole.
 
 ## What we built
 
@@ -30,9 +28,9 @@ The work in flight ([PR #1272](https://github.com/nolabs-ai/nono/pull/1272), in 
 
 At startup, nono connects to the SPIRE Workload API socket and obtains SVIDs for the supervisor. Fail-closed: no identity, no session. There is no degraded mode where the workload runs unidentified.
 
-The broker requests a JWT-SVID scoped to the upstream audience and injects it per invocation, exactly as it injects any phantom credential: the sandboxed agent makes a plain request and never sees the token that authenticated it. Tokens refresh before expiry through the agent cache, and SVID private key material is never written to disk or logged. The division of labor is clean: the SPIRE operator registers the workload entry and configures the agent, and nono's config is just the socket path and what to request.
+For JWT-SVID routes, the broker requests a token scoped to the upstream audience and injects it per invocation, exactly as it injects any phantom credential: the sandboxed agent makes a plain request and never sees the token that authenticated it. The token is zeroed from memory after use. Its natural lifetime is minutes; its exposure inside the broker is milliseconds.
 
-X.509-SVID mTLS, with a client certificate presented during the handshake and rotated atomically, is the planned next variant. It waits on the TLS-intercept CONNECT path being wired to support it for HTTPS upstreams. Saying so is the point of working in the open: the JWT path is what exists today.
+For X.509-SVID routes, the broker holds the workload's TLS identity in an atomically swappable connector with background rotation: SPIRE re-issues the certificate on its own schedule and the connector swaps mid-flight, no restart, no window where a stale identity lingers because redeployment was inconvenient.
 
 The injection path this rides on is protocol-consistent: HTTP/2 forwarding enforces the same credential rules as HTTP/1.1, with regression tests pinning the parity. And every brokered invocation lands where everything in nono lands: the audit trail, sequence-numbered, hash-chained, Merkle-committed, written by a process the agent cannot touch.
 
