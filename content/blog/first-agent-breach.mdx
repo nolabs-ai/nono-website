@@ -16,7 +16,7 @@ That is the threat model egress control answers. Not "stop the injection." Injec
 
 ## Closed by default, at the kernel
 
-When network restriction is on, the sandboxed process can reach exactly one thing: the proxy port on localhost. Every other outbound TCP connection is blocked at the kernel level, below the agent, below its runtime, below anything an injected instruction can talk to. Traffic that wants out goes through the proxy, and the proxy checks policy.
+When network restriction is on, the sandboxed process gets one TCP destination: the proxy port on localhost. Every other outbound TCP connection is blocked at the kernel level, below the agent, below its runtime, below anything an injected instruction can talk to. Traffic that wants out goes through the proxy, and the proxy checks policy.
 
 ```bash
 nono run --allow-cwd \
@@ -77,7 +77,13 @@ answers whether a URL is reachable and which rule decides it. Debugging policy i
 
 ## What this does not do
 
-Honesty about the boundary. In domain-filtering mode, TLS runs end to end: the proxy validates the hostname and relays bytes, and never sees plaintext. That is a privacy property and a limitation in one: nono is filtering where traffic goes, not inspecting what it says. And nono does not prevent prompt injection. It bounds what an injected agent can reach, and records what it tried. Narrower claims, checkable ones: the enforcement path is Apache-2.0, and you can run the probe yourself.
+Honesty about the boundary, in three parts.
+
+In domain-filtering mode, TLS runs end to end: the proxy validates the hostname and relays bytes, and never sees plaintext. That is a privacy property and a limitation in one: nono is filtering where traffic goes, not inspecting what it says.
+
+The kernel primitives have documented edges, and ours are written down rather than glossed. On Linux, Landlock's network control covers TCP bind and connect. UDP is outside its scope, which is why nono's own documentation states plainly that DNS resolution over UDP is not blocked by Landlock. If your threat model includes tunneling out over UDP, that boundary wants another control, and you should learn that here rather than during an incident.
+
+And nono does not prevent prompt injection. It bounds what an injected agent can reach, and records what it tried. Narrower claims, checkable ones: the enforcement path is Apache-2.0, and you can run the probe yourself.
 
 **Three takeaways.** The exfiltration channel, not the injection, is the controllable variable. Deny-by-default at the kernel, explicit deny above the allowlist, fail-closed configuration: all shipped in nono today. Denials are audit events, so the probe is visible before the breach.
 
