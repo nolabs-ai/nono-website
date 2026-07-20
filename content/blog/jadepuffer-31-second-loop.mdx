@@ -1,0 +1,129 @@
+---
+title: "JadePuffer: A Langflow Instance, an LLM, and a 31-Second Failure Loop"
+seoTitle: "JadePuffer: Inside the First LLM-Driven Ransomware Attack"
+date: "2026-07-20"
+description: "JadePuffer, the first LLM-driven ransomware attack, shows why AI orchestration platforms need kernel-level runtime enforcement, not just model guardrails."
+excerpt: "JadePuffer took an internet-facing Langflow instance, an unauthenticated RCE, and 31 seconds. In that window, an LLM diagnosed its own failure and pushed a working fix. It's a marker of where ransomware is heading -- and a preview of the runtime layer we've been missing."
+author: "Stephen Parkinson"
+authorRole: "Maintainer"
+tags: ["security", "ransomware", "jadepuffer", "agents", "llm", "sandbox", "langflow", "runtime", "kernel enforcement"]
+---
+
+A Langflow instance. Exposed to the internet. Running with the LLM API keys and cloud credentials any AI orchestration platform needs to do its job. Nothing unusual -- that is how most of these things are deployed.
+
+Then someone found [CVE-2025-3248](https://nvd.nist.gov/vuln/detail/CVE-2025-3248), and handed the shell to an LLM.
+
+Thirty-one seconds later, the LLM had diagnosed a failed login, identified the root cause as a subprocess `PATH` issue, drafted a corrective payload, deleted the broken database row, and reinserted the credentials correctly. That is the number the [Sysdig Threat Research Team](https://www.sysdig.com/blog/jadepuffer-agentic-ransomware-for-automated-database-extortion) recorded in the actual timeline of the intrusion. It is a marker of where ransomware is heading.
+
+The operator has a name now: **JadePuffer**. Michael Clark and the Sysdig TRT documented what they assess to be the first end-to-end ransomware operation driven autonomously by a large language model. The full write-up is worth reading in detail. This post is about what the attack tells us about the layer of security that most AI orchestration deployments are still missing.
+
+---
+
+## What actually happened
+
+Sysdig captured 600-plus distinct payloads across two targets:
+
+1. The initial-access host was an internet-facing Langflow instance, compromised through the unauthenticated remote code execution flaw in CVE-2025-3248.
+2. From there, the LLM pivoted to the intended target: a separate internet-exposed production server running MySQL and an Alibaba Nacos configuration service.
+
+On the Langflow host, the agent enumerated the environment and swept for secrets across categories -- LLM provider API keys (OpenAI, Anthropic, DeepSeek, Gemini), cloud credentials across major providers plus the full `ALIBABA_`, `ALIYUN_`, `TENCENT_` and `HUAWEI_` prefixes, cryptocurrency wallets, and database configuration files. It dumped Langflow's own backing Postgres. It probed the internal MinIO object store using the default `minioadmin:minioadmin` credentials, listed every bucket, and pulled `.env` and `credentials.json` from the internal config bucket by name.
+
+It installed persistence -- a `crontab` entry beaconing every thirty minutes to attacker infrastructure. Then it pivoted.
+
+On the production database server, it attacked Nacos through multiple vectors in parallel: exploiting the auth-bypass family from [CVE-2021-29441](https://nvd.nist.gov/vuln/detail/CVE-2021-29441), forging a valid JWT using Nacos's well-known default signing key, and, once it had root database access, injecting a backdoor administrator directly into Nacos's backing MySQL.
+
+Its container-escape probes read `docker.sock` and `/proc/1/cgroup` looking for a way out.
+
+When the backdoor admin login failed, thirty-one seconds later a corrective payload landed -- fifteen lines of coordinated code that deleted the broken account, diagnosed the failure as a `subprocess.run` PATH issue, switched to `import bcrypt` directly, and reinserted the account correctly. Login succeeded.
+
+Then it encrypted all 1,342 Nacos configuration items using MySQL's `AES_ENCRYPT()`, dropped the original `config_info` and history tables, dropped entire customer and user databases the LLM described in its own comments as "high-ROI", and dropped a ransom note into an `README_RANSOM` table with a Bitcoin address and a Proton Mail contact.
+
+The AES key was generated from two random UUIDs, printed once to `stdout`, and never persisted or transmitted. Even if the victim pays, the data cannot be recovered.
+
+There is one more tell in the extortion note itself. The Bitcoin address JadePuffer dropped into the `README_RANSOM` table -- `3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy` -- is the canonical Pay-to-Script-Hash example baked into Bitcoin developer documentation, and by extension into every LLM training corpus that ingested those docs. Sysdig could not determine whether the LLM autonomously hallucinated the address from its training data, or the operator configured a real wallet that happens to coincide with the documentation example. Either interpretation is worth sitting with.
+
+---
+
+## Three implications
+
+Sysdig's own phrasing lands the first point better than any paraphrase:
+
+> *"Tradecraft that once implied a capable human now implies a capable model."*
+
+None of the individual techniques in JadePuffer were novel. Unauthenticated RCE, credential harvesting, lateral movement via default credentials, JWT forgery against a service with a well-known signing key, database extortion -- every step of this attack has been in the playbook for years. The novelty is the operator.
+
+Which means three things follow directly:
+
+**The skill floor has collapsed.** An LLM can chain reconnaissance, credential theft, lateral movement, persistence and destruction without the operator possessing deep expertise in any one step. Whoever pointed the model at CVE-2025-3248 did not need to know how Nacos JWTs work, how MySQL user-defined functions can escape a container, or how to compose a bcrypt hash into an admin insert. The model did.
+
+**The historical vulnerability catalogue is now automatable.** The Nacos flaw JadePuffer exploited is from 2021. The default signing key it forged JWTs against has been public since 2020. The MinIO defaults it swept for have been well-known since MinIO shipped. Agents make spraying the entire back catalogue effectively free. The long tail of unpatched systems is more exposed, not less.
+
+**The LLM narrates its own intent.** JadePuffer's payloads read like a running commentary -- prioritisation rationale, target selection reasoning, self-descriptions of each step. That is unusual for a human intrusion, and it is a detection and triage opportunity defenders did not previously have. Sysdig's assessment leans heavily on this: humans do not annotate throwaway `python3 -c` one-liners with natural-language reasoning. Language models do so reflexively.
+
+---
+
+## The layer that was missing
+
+Look at what the Langflow process had before the LLM ever touched it. LLM API keys in environment variables. Cloud credentials in environment variables. Reachability to internal MinIO, internal MySQL, internal Nacos. Read and write on the local filesystem. The ability to install a `crontab`. Outbound network to any destination the host could reach.
+
+When the LLM RCE'd into that process, it did not need to escalate privileges. It did not need to break out of anything. The authority was already there for the taking. All the LLM had to do was ask.
+
+This is what "a guardrail bolted around the model" means in practice. You have built a moat around what the model should output. But the process the model runs inside can do everything a shell can do. When the model is compromised -- or, in this case, replaced with an adversarial one -- every capability of the host process is on the table.
+
+The specific technique does not matter. The layer at which authority is granted does.
+
+---
+
+## What kernel enforcement changes
+
+nono operates at that layer. The kernel decides whether a process is allowed to open a network socket, read a file, or spawn a subprocess -- not the process itself. Policy is declared as code, versioned alongside the application. Every action is checked before it happens.
+
+Concretely, here is what each step of JadePuffer looks like inside a nono sandbox running the same Langflow deployment:
+
+| JadePuffer action | Inside a nono sandbox |
+| --- | --- |
+| Sweep `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `ALIBABA_*`, `AWS_*` from environment | Real credentials never enter the sandbox. The child sees phantom session tokens; the real keys stay in the supervisor's [credential broker](/blog/blog-credential-injection). Reading environment variables returns tokens that have no value to an attacker. |
+| Cron beacon to `hxxp://45.131.66[.]106:4444/beacon` | Outbound network to arbitrary IPs is denied by policy. The allow-list would specify the model providers Langflow actually calls. |
+| Install `crontab` entry for persistence | Filesystem write to `/var/spool/cron/` is outside the declared writable scope. Denied. |
+| Probe `minio.internal:9000`, `mysql://<prod>:3306`, Nacos service ports | Internal-network reachability is scoped to what the policy declares. Not on the allow-list. |
+| Read `/var/run/docker.sock` for container-escape survey | Filesystem read outside the declared scope. Denied. |
+| Write `/tmp/creds.json` to stage extracted credentials | Sandbox has its own writable scratch directory. `/tmp` writes outside that scope are denied. |
+| `SET GLOBAL FOREIGN_KEY_CHECKS=0` before `DROP DATABASE` | Never reached. The database connection was never allowed. |
+
+None of the enforcement in the table above requires speculative new features -- nono policies can express each of these constraints today. A Langflow-shaped nono profile -- "web-facing tool, needs LLM API access, no reason to touch the internal network, no reason to write outside its data directory" -- is a standard nono use case. What the process can do, the process can do. What it cannot do, no LLM inside it can be tricked or replaced into doing.
+
+nono does not make Langflow bulletproof. What it does is make sure that when the process at the top of the stack goes off-script -- whether that is a bug, a prompt injection, or an RCE handed to an adversarial LLM -- the kernel is still saying no.
+
+---
+
+## The bigger point
+
+JadePuffer is the version of this story where the LLM is the attacker. The next version will not need an RCE. It will be a prompt injection against a friendly agent, a compromised MCP tool, or a malicious dependency your coding agent installs during a routine `npm install`. The mechanism will differ. The problem -- process authority that outstrips the task the model is supposed to perform -- will not.
+
+Every LLM-driven process sits inside a host process that has authority beyond what any single task needs. When the model is well-behaved, the extra authority is invisible. When it is not, the extra authority is the attack surface.
+
+Runtime enforcement is the layer that stays true when the code above it does not.
+
+---
+
+## Read the source
+
+The primary account of JadePuffer is Sysdig's own [blog post by Michael Clark](https://www.sysdig.com/blog/jadepuffer-agentic-ransomware-for-automated-database-extortion). The indicators of compromise, payload extracts, and their full detection guidance are there. Dark Reading's write-up [is here](https://www.darkreading.com/cyberattacks-data-breaches/jadepuffer-first-complete-llm-driven-ransomware-attack). Both are worth your time.
+
+If you are running an AI orchestration platform, an MCP server, or any tool that hands an LLM more than a narrowly-scoped task, take a look at [nono](/). Getting started takes about a minute:
+
+```bash
+curl -sSL nono.sh | sh
+```
+
+Documentation at [nono.sh/docs](https://nono.sh/docs). Community on [GitHub](https://github.com/nolabs-ai/nono).
+
+## Next steps
+
+- **[Runtime Supervisor](/runtime-supervisor)** — The trusted parent process that checks every capability decision before it happens
+- **[OS Sandbox](/os-sandbox)** — How kernel-level enforcement isolates the agent from the host on Linux and macOS
+- **[Credential Injection](/blog/blog-credential-injection)** — The phantom token pattern that keeps real keys out of the sandbox
+- **[Docs](https://nono.sh/docs)** — Full CLI and policy reference
+- **[GitHub](https://github.com/nolabs-ai/nono)** — Source code
+
+The kernel decides what your agent's world contains. When the agent -- or the process it lives in -- goes off-script, the kernel is still the one saying no.
