@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import {
   Menu,
   X,
-  Github,
   ChevronDown,
   Lock,
   Undo2,
@@ -20,6 +19,7 @@ import {
   Terminal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { Github } from "./icons/GithubIcon";
 import { DOCS_URL } from "@/lib/site";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
