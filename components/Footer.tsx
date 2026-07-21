@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Github, BookOpen, Scale } from "lucide-react";
+import { BookOpen, Scale } from "lucide-react";
+import { Github } from "./icons/GithubIcon";
 import { AfLogo } from "@/components/AfLogo";
 import { DOCS_URL } from "@/lib/site";
 

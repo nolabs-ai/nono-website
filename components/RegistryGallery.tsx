@@ -3,10 +3,10 @@ import {
   ArrowRight,
   BadgeCheck,
   Download,
-  Github,
   PackageCheck,
   ShieldCheck,
 } from "lucide-react";
+import { Github } from "./icons/GithubIcon";
 import type { LucideIcon } from "lucide-react";
 import { REGISTRY_URL } from "@/lib/site";
 
