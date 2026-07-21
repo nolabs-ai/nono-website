@@ -67,7 +67,7 @@ export default async function OpenGraphImage({ params }: ImageProps) {
             gap: 20,
           }}
         >
-          <img src={logoBase64} alt="" width="92" height="92" />
+          <img src={logoBase64} alt="" width={92} height={92} />
 
           <div
             style={{
