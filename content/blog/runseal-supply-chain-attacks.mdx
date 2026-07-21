@@ -1,0 +1,119 @@
+---
+title: "GitHub Actions supply-chain attacks are here, so stop giving CI your release token"
+seoTitle: "How runseal Prevents Supply Chain Attacks"
+date: "2026-06-09"
+description: "How runseal wraps your release step in a kernel-level sandbox, injects phantom credentials, and blocks the network to stop supply-chain attacks that rely on untrusted code running in CI/CD."
+author: "Luke Hinds"
+authorRole: "Maintainer"
+tags: ["Security", "Supply Chain Attacks", "npm", "axios", "runseal", "Sandboxing", "OS Security"]
+---
+
+GitHub Actions are a high-value supply-chain target because they sit right where code execution meets credentials, sensitive data, and network access. Release workflows often hold tokens that can publish to a registry, deploy to production, or push an image — and they run whatever code your dependencies bring with them. The attack surface is not just the code in your repo.
+
+The usual hardening advice is good, and defence-in-depth matters as much as ever: pin your actions, use OIDC and trusted publishing, rotate credentials, mask secrets. Keep doing all of it.
+
+But none of it changes the moment that keeps getting exploited. When a workflow runs `npm publish`, `cargo publish`, or `docker push`, that process has ambient access to the token — along with your files and the network. Any code in the process tree can use all three.
+
+runseal targets the three things that have to line up for a supply-chain attack to pay off:
+
+1. **Untrusted code runs.** It can be yours or a dependency's. If it's compromised, it can do anything the process can do.
+2. **Powerful credentials are in reach.** The token usually sits in the environment, available to every child process.
+3. **The network is open.** That's the exfiltration path for whatever the code steals.
+
+runseal works at the runtime boundary. It doesn't stop the malicious code from running, it stops that code from reaching the *real* token, limits the network endpoints it can touch, and makes reading files outside a declared list structurally impossible.
+
+## Supply-chain attacks are ramping up
+
+The last couple of years made the old model hard to defend. The last few weeks made it look careless.
+
+The XZ backdoor showed that the build and release path of a trusted component is itself an attack surface. The `tj-actions/changed-files` compromise showed the same thing inside GitHub Actions, with version tags repointed at code that leaked CI/CD secrets into workflow logs.
+
+The npm incidents that followed made the pattern impossible to ignore. Nx `s1ngularity`, Shai-Hulud, Red Hat's compromised packages, and the Miasma worm all ran on ordinary developer machinery: install hooks, Actions workflows, publishing tokens, cloud credentials, and automation that looked normal right up until it didn't. Unit 42's research TeamPCP's exploits, found the same approach aimed at security tooling itself — Trivy, KICS, LiteLLM, the Telnyx Python SDK.
+
+Release automation has become an attack platform, because it's where code execution and credentials meet. The incidents differ in the details but rhyme in the part that matters:
+
+- trusted automation ran code that later proved untrustworthy
+- powerful ambient credentials were reachable by that code
+- the network was available to carry them off to hacker controlled servers
+- detection came after the credential had already left
+
+That's the gap runseal is built to close, by putting a runtime boundary around the release step.
+
+## Credentials are authority, not strings
+
+Most release jobs treat credentials as passive strings. They aren't. A credential in an environment variable is authority attached to every child process. If a postinstall script can read `NPM_TOKEN`, it can publish. If a build script can read `CARGO_REGISTRY_TOKEN`, it can exfiltrate it.
+
+Each existing control helps, and none of them removes that authority. Masking cleans up logs. Pinning reduces drift but doesn't make pinned code harmless. OIDC and trusted publishing cut down long-lived tokens, but a live job can still receive real authority — and once the workflow boundary is compromised, even short-lived credentials are usable while they're valid. Attestations tell you what was built and where, after the fact; they don't stop a build hook from reading a token mid-run and sending it somewhere else.
+
+runseal is deliberately about the runtime boundary instead.
+
+## What runseal does
+
+runseal wraps the dangerous command:
+
+```yaml
+- uses: always-further/runseal@v0.3.2
+  with:
+    run: TMPDIR="$PWD/target/tmp" cargo publish --allow-dirty
+    audit: artifact
+    policy: |
+      fs:
+        read:
+          - "."
+          - "/home/runner/.cargo"
+          - "/home/runner/.rustup"
+        write:
+          - "./target"
+          - "./Cargo.lock"
+          - "/home/runner/.cargo"
+      network:
+        mode: filtered
+        allow:
+          - index.crates.io
+          - static.crates.io
+      access:
+        cratesio:
+          secret: CARGO_REGISTRY_TOKEN
+          url: https://crates.io
+          inject:
+            mode: header
+          allow:
+            - PUT /api/v1/crates/new
+  env:
+    CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+```
+
+Inside the wrapper:
+
+1. The command runs under nono's kernel-enforced sandbox.
+2. The real secret is removed from the sandboxed process environment.
+3. The process gets a phantom credential, so package managers and SDKs still behave as if a token is present.
+4. The real credential stays outside the sandbox and is injected by the proxy only when the host, method, and path match the grant.
+5. Network access is blocked or filtered by policy.
+6. Filesystem reads and writes are restricted to declared paths.
+7. A cryptographic audit trail is exported as a workflow artifact.
+
+The point isn't that this makes `cargo publish` special. It's that the release token no longer belongs to the whole process tree.
+
+A transitive build script that reads the token from the environment sees the phantom. If it ships that phantom to an attacker's host, the token is useless and the network policy should block the route anyway. If it tries the real credential against the wrong endpoint, the proxy has no grant for that request.
+
+## Not just another scanner
+
+runseal doesn't try to spot the malicious package before it runs. That's a losing bet for a runtime control. You still want lockfiles, review, dependency scanners, provenance, and registry controls — runseal assumes they'll eventually miss something, because they do. You can think of it as akin to a safety harness. It doesn't stop you from falling, but it does stop you from hitting the ground. The question it answers isn't "what's wrong with this package?" but "what can this package do if it's wrong?"
+
+## Where it earns its place
+
+runseal is most useful around narrow, high-value steps — publish a package, push a release artifact, deploy to production, call a privileged API. These already have a natural shape: a package publish should talk to the package registry, a Docker push to the container registry, a deploy step to the deploy API. Most of the dependency graph never needs the credential, and it certainly doesn't need to spray it across the internet. The policy just describes that shape.
+
+Runseal is developed by the team behind [Sigstore](https://sigstore.dev/) and [nono](https://nono.sh/), and is open source under the Apache 2.0 License. It's available as a GitHub Action on the [Marketplace](https://github.com/marketplace/actions/runseal-supply-chain-security-action), and can be used in any CI/CD system that can run a container.
+
+## Sources
+
+- GitHub Advisory Database: [`tj-actions/changed-files` through 45.0.7 allows remote attackers to discover secrets by reading actions logs](https://github.com/advisories/ghsa-mrrh-fwg8-r2c3)
+- OpenSSF: [xz Backdoor CVE-2024-3094](https://openssf.org/blog/2024/03/30/xz-backdoor-cve-2024-3094/)
+- Nx: [S1ngularity - What Happened, How We Responded, What We Learned](https://nx.dev/blog/s1ngularity-postmortem)
+- Datadog Security Labs: [Learnings from recent npm supply chain compromises](https://securitylabs.datadoghq.com/articles/learnings-from-recent-npm-compromises/)
+- Unit 42: [Weaponizing the Protectors: TeamPCP's Multi-Stage Supply Chain Attack on Security Infrastructure](https://unit42.paloaltonetworks.com/teampcp-supply-chain-attacks/)
+- Red Hat: [RHSB-2026-006 Supply chain compromise of `@redhat-cloud-services` npm packages](https://access.redhat.com/security/vulnerabilities/RHSB-2026-006)
+- The Hacker News: [Miasma Supply Chain Attack Compromises Red Hat npm Packages with Credential-Stealing Worm](https://thehackernews.com/2026/06/miasma-supply-chain-attack-compromises.html)
+- The Hacker News: [Miasma Worm Hits 73 Microsoft GitHub Repositories in Major Supply Chain Attack](https://thehackernews.com/2026/06/miasma-worm-hits-73-microsoft-github.html)
