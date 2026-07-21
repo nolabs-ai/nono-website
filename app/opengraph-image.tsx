@@ -41,7 +41,7 @@ export default function OpenGraphImage() {
             paddingRight: "36px",
           }}
         >
-          <img src={logoBase64} alt="" width="240" height="240" />
+          <img src={logoBase64} alt="" width={240} height={240} />
         </div>
 
         <div
