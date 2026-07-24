@@ -73,6 +73,14 @@ export interface Scenario {
   id: ScenarioId;
   label: string;
   command: string;
+  agent: {
+    user: string;
+    response: string;
+    tool: string;
+    toolMeta: string;
+    result: string;
+    resultMeta: string;
+  };
   staticStep: number;
   skippedPhases: RailPhase[];
   outcomeText: string;
@@ -85,7 +93,15 @@ export const SCENARIOS: Scenario[] = [
   {
     id: "allowed",
     label: "Allowed read",
-    command: "gh issue view 1052 --repo always-further/nono",
+    command: "gh issue view 1052 --repo nolabs-ai/nono",
+    agent: {
+      user: "What changed in issue #1052?",
+      response: "Let me check the issue.",
+      tool: "GitHub · View issue",
+      toolMeta: "nolabs-ai/nono · #1052",
+      result: "Issue #1052 · Brokered tool isolation",
+      resultMeta: "Open · 14 comments",
+    },
     staticStep: 9,
     skippedPhases: [],
     outcomeText:
@@ -220,6 +236,14 @@ export const SCENARIOS: Scenario[] = [
     id: "argv-denied",
     label: "Argv denied",
     command: 'gh issue comment 1052 --body "shipping this"',
+    agent: {
+      user: "Comment “shipping this” on issue #1052.",
+      response: "I’ll add the comment.",
+      tool: "GitHub · Comment on issue",
+      toolMeta: "nolabs-ai/nono · #1052",
+      result: "Tool denied · argv policy",
+      resultMeta: "issue comment is not permitted",
+    },
     staticStep: 3,
     skippedPhases: ["SPAWN", "EXECUTE", "DESTROY"],
     outcomeText:
@@ -280,7 +304,15 @@ export const SCENARIOS: Scenario[] = [
   {
     id: "l7-denied",
     label: "L7 denied",
-    command: "gh api --method POST /repos/always-further/nono/issues/1052/comments",
+    command: "gh api --method POST /repos/nolabs-ai/nono/issues/1052/comments",
+    agent: {
+      user: "Post a comment through the GitHub API.",
+      response: "I’ll call the GitHub API.",
+      tool: "GitHub · API request",
+      toolMeta: "POST · issue #1052 comments",
+      result: "Tool denied · L7 policy",
+      resultMeta: "POST comments endpoint is not permitted",
+    },
     staticStep: 5,
     skippedPhases: [],
     outcomeText:
@@ -338,7 +370,7 @@ export const SCENARIOS: Scenario[] = [
         },
         sandbox: "active",
         caption: "denied at the proxy — the request never crosses to GitHub",
-        detail: "POST /repos/always-further/nono/issues/1052/comments → DENY",
+        detail: "POST /repos/nolabs-ai/nono/issues/1052/comments → DENY",
       },
       {
         id: "audit",

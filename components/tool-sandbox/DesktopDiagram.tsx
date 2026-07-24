@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties } from "react";
 import {
   PHANTOM_TOKEN,
   type PathId,
@@ -15,156 +15,311 @@ interface DesktopDiagramProps {
 }
 
 const PATHS: Record<PathId, string> = {
-  "agent-supervisor": "M 156 224 H 204",
-  spawn: "M 480 240 H 568",
-  "phantom-cred": "M 480 294 H 568",
-  egress: "M 620 336 V 360 H 480",
-  "proxy-github": "M 480 372 H 528 V 396 H 828",
-  "audit-drop-argv": "M 228 180 H 216 V 452",
-  "audit-drop-proxy": "M 440 384 V 452",
-  "audit-drop-sandbox": "M 668 336 V 452",
-  "audit-lane": "M 204 452 H 700",
+  "agent-supervisor": "M 300 294 H 350",
+  spawn: "M 520 294 H 580",
+  "phantom-cred": "M 520 382 H 646",
+  egress: "M 906 294 H 936",
+  "proxy-github": "M 1044 294 H 1104",
+  "audit-drop-argv": "M 438 270 V 520",
+  "audit-drop-proxy": "M 990 362 V 520",
+  "audit-drop-sandbox": "M 742 444 V 520",
+  "audit-lane": "M 176 520 H 1094",
 };
 
-// Chevrons that are always part of the structure vs. ones that only exist
-// alongside the micro sandbox.
-const STATIC_CHEVRONS = [
-  "M 199 220 L 204 224 L 199 228", // into supervisor
-  "M 823 392 L 828 396 L 823 400", // into GitHub
-  "M 695 448 L 700 452 L 695 456", // lane into merkle
-  "M 212 447 L 216 452 L 220 447", // argv audit drop
-  "M 436 447 L 440 452 L 444 447", // proxy audit drop
-];
-
-const SANDBOX_CHEVRONS = [
-  "M 563 236 L 568 240 L 563 244", // spawn into sandbox
-  "M 563 290 L 568 294 L 563 298", // phantom cred into sandbox
-  "M 485 356 L 480 360 L 485 364", // egress into proxy
-  "M 664 447 L 668 452 L 672 447", // sandbox audit drop
-];
-
-interface StageBox {
+const GATES: {
   id: StageId;
+  index: string;
   title: string;
-  sub: string;
+  idle: string;
   y: number;
+}[] = [
+  { id: "resolver", index: "01", title: "EXECUTABLE", idle: "identity + digest", y: 150 },
+  { id: "argv", index: "02", title: "ARGV POLICY", idle: "caller + arguments", y: 216 },
+  { id: "capability", index: "03", title: "CAPABILITIES", idle: "minimal grants", y: 282 },
+  { id: "credential", index: "04", title: "CREDENTIAL", idle: "supervisor vault", y: 348 },
+];
+
+const SANDBOX_PATH =
+  "M 608 128 H 858 L 904 174 V 402 L 876 444 H 608 L 580 416 V 156 Z";
+const SANDBOX_INNER =
+  "M 620 146 H 850 L 886 182 V 394 L 866 426 H 616 L 598 408 V 166 Z";
+const TOOL_CORE =
+  "M 674 222 H 810 L 828 240 V 316 L 810 334 H 674 L 656 316 V 240 Z";
+const PROXY_GATE =
+  "M 956 218 H 1024 L 1044 238 V 346 L 1028 362 H 952 L 936 346 V 238 Z";
+
+function cutRect(x: number, y: number, w: number, h: number, cut = 10) {
+  return `M ${x} ${y} H ${x + w - cut} L ${x + w} ${y + cut} V ${
+    y + h
+  } H ${x} Z`;
 }
 
-const STAGES: StageBox[] = [
-  { id: "resolver", title: "executable resolver", sub: "path + hash verification", y: 96 },
-  { id: "argv", title: "argv policy", sub: "caller + argv rules", y: 156 },
-  { id: "capability", title: "capability broker", sub: "minimal baseline · selected grants", y: 216 },
-  { id: "credential", title: "credential broker", sub: "", y: 276 },
-  { id: "proxy", title: "L7 proxy · localhost", sub: "method/path policy", y: 336 },
-];
+function Gate({
+  gate,
+  active,
+  value,
+  verdict,
+}: {
+  gate: (typeof GATES)[number];
+  active: boolean;
+  value: string;
+  verdict?: "ALLOW" | "DENY";
+}) {
+  const color =
+    verdict === "DENY"
+      ? "var(--ts-deny)"
+      : verdict === "ALLOW"
+        ? "var(--ts-allow)"
+        : active
+          ? "var(--ts-accent)"
+          : "var(--ts-line)";
 
-const SANDBOX = { x: 568, y: 96, w: 200, h: 240 };
+  return (
+    <g className="ts-node-transition">
+      <path
+        d={cutRect(350, gate.y, 170, 54, 9)}
+        fill={active ? "var(--ts-active)" : "var(--ts-panel)"}
+        stroke={color}
+      />
+      <text x={362} y={gate.y + 17} className="ts-svg-label" fill="var(--ts-faint)">
+        {gate.index}
+      </text>
+      <text x={388} y={gate.y + 18} className="ts-svg-label" fill="var(--ts-text)">
+        {gate.title}
+      </text>
+      <text x={362} y={gate.y + 39} className="ts-svg-code" fill="var(--ts-muted)">
+        {value || gate.idle}
+      </text>
+      {verdict && (
+        <g transform={`translate(474 ${gate.y + 9})`}>
+          <circle r={3} fill={color} />
+          <text x={-2} y={27} textAnchor="end" className="ts-svg-micro" fill={color}>
+            {verdict}
+          </text>
+        </g>
+      )}
+    </g>
+  );
+}
 
-const SANDBOX_CORNERS = [
-  "M 568 118 L 568 96 L 590 96",
-  "M 746 96 L 768 96 L 768 118",
-  "M 768 314 L 768 336 L 746 336",
-  "M 590 336 L 568 336 L 568 314",
-];
-
-const CAPABILITIES = [
-  "workspace: read-only",
-  "fs writes: denied",
-  "host secrets: denied",
-  "stdio: bounded",
-  "net: via nono proxy",
-];
-
-const MERKLE_EDGES = [
-  "M 728 462 L 742 446",
-  "M 756 462 L 742 446",
-  "M 784 462 L 798 446",
-  "M 812 462 L 798 446",
-  "M 742 446 L 770 430",
-  "M 798 446 L 770 430",
-];
-
-const MERKLE_LEAVES: [number, number][] = [
-  [728, 462],
-  [756, 462],
-  [784, 462],
-  [812, 462],
-  [742, 446],
-  [798, 446],
-];
-
-function VerdictBadge({
+function CapabilityPort({
   x,
   y,
-  verdict,
-  appear,
+  align = "left",
+  label,
+  value,
+  danger,
 }: {
   x: number;
   y: number;
-  verdict: "ALLOW" | "DENY";
-  appear: boolean;
+  align?: "left" | "right";
+  label: string;
+  value: string;
+  danger?: boolean;
 }) {
-  const color = verdict === "ALLOW" ? "var(--allow)" : "var(--deny)";
+  const width = 112;
+  const left = align === "left" ? x : x - width;
+  const color = danger ? "var(--ts-deny)" : "var(--ts-accent)";
   return (
-    <g
-      className={appear ? "animate-fade-in" : undefined}
-      style={appear ? { animationDelay: "350ms" } : undefined}
-    >
-      <rect x={x} y={y} width={56} height={18} rx={2} fill="none" stroke={color} strokeWidth={1} />
-      {verdict === "ALLOW" ? (
-        <path
-          d={`M ${x + 6} ${y + 9.5} l 2.5 2.5 l 4.5 -4.5`}
-          fill="none"
-          stroke={color}
-          strokeWidth={1.2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ) : (
-        <path
-          d={`M ${x + 6} ${y + 6} l 6 6 M ${x + 12} ${y + 6} l -6 6`}
-          fill="none"
-          stroke={color}
-          strokeWidth={1.2}
-          strokeLinecap="round"
-        />
-      )}
-      <text x={x + 18} y={y + 12.5} fontSize={9} fill={color} className="font-code">
-        {verdict}
+    <g>
+      <path
+        d={cutRect(left, y, width, 38, 7)}
+        fill="var(--ts-panel-strong)"
+        stroke="var(--ts-line-strong)"
+      />
+      <rect
+        x={align === "left" ? left : left + width - 3}
+        y={y + 11}
+        width={3}
+        height={16}
+        fill={color}
+      />
+      <text x={left + 10} y={y + 14} className="ts-svg-micro" fill="var(--ts-faint)">
+        {label}
+      </text>
+      <text x={left + 10} y={y + 29} className="ts-svg-code" fill="var(--ts-text)">
+        {value}
       </text>
     </g>
   );
 }
 
-function NodeBox({
-  x,
-  y,
-  w,
-  h,
+function AgentSurface({
+  scenario,
   active,
-  children,
+  resultVisible,
 }: {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
+  scenario: Scenario;
   active: boolean;
-  children?: ReactNode;
+  resultVisible: boolean;
 }) {
   return (
     <g>
-      <rect
-        x={x}
-        y={y}
-        width={w}
-        height={h}
-        fill="var(--accent-glow)"
-        fillOpacity={active ? 1 : 0}
-        stroke={active ? "var(--accent)" : "var(--muted)"}
-        strokeWidth={1}
+      <path
+        d="M 20 126 H 286 L 300 140 V 442 L 286 456 H 20 Z"
+        fill="var(--ts-panel)"
+        stroke={active ? "var(--ts-accent)" : "var(--ts-line-strong)"}
         className="ts-node-transition"
       />
-      {children}
+      <path d="M 20 158 H 300" stroke="var(--ts-line)" />
+      <circle cx={36} cy={142} r={3} fill="var(--ts-accent)" />
+      <circle cx={48} cy={142} r={3} fill="var(--ts-line-strong)" />
+      <circle cx={60} cy={142} r={3} fill="var(--ts-line-strong)" />
+      <text x={78} y={146} className="ts-svg-label" fill="var(--ts-muted)">
+        AGENT SESSION
+      </text>
+      <text x={274} y={146} textAnchor="end" className="ts-svg-micro" fill="var(--ts-faint)">
+        LIVE
+      </text>
+
+      <circle cx={39} cy={184} r={9} fill="var(--ts-line)" />
+      <text x={39} y={187} textAnchor="middle" className="ts-svg-micro" fill="var(--ts-text)">
+        U
+      </text>
+      <text x={56} y={178} className="ts-svg-micro" fill="var(--ts-faint)">
+        USER
+      </text>
+      <text x={56} y={197} className="ts-svg-body" fill="var(--ts-text)">
+        {scenario.agent.user}
+      </text>
+
+      <path d="M 30 216 H 288" stroke="var(--ts-line)" strokeDasharray="2 5" />
+      <path
+        d="M 31 238 L 39 230 L 47 238 L 39 246 Z"
+        fill="none"
+        stroke="var(--ts-accent)"
+      />
+      <text x={56} y={232} className="ts-svg-micro" fill="var(--ts-accent)">
+        AGENT
+      </text>
+      <text x={56} y={251} className="ts-svg-body" fill="var(--ts-text)">
+        {scenario.agent.response}
+      </text>
+
+      <path
+        d="M 31 272 H 278 L 288 282 V 344 H 31 Z"
+        fill="var(--ts-panel-strong)"
+        stroke={active ? "var(--ts-accent)" : "var(--ts-line-strong)"}
+        className="ts-node-transition"
+      />
+      <path
+        d="M 43 287 H 57 L 63 293 V 307 L 57 313 H 43 L 37 307 V 293 Z"
+        fill="var(--ts-active)"
+        stroke="var(--ts-accent)"
+      />
+      <text x={50} y={302} textAnchor="middle" className="ts-svg-code" fill="var(--ts-accent)">
+        gh
+      </text>
+      <text x={73} y={291} className="ts-svg-micro" fill="var(--ts-faint)">
+        TOOL CALL
+      </text>
+      <text x={73} y={310} className="ts-svg-body" fill="var(--ts-text)">
+        {scenario.agent.tool}
+      </text>
+      <text x={73} y={329} className="ts-svg-code" fill="var(--ts-muted)">
+        {scenario.agent.toolMeta}
+      </text>
+      <circle
+        cx={271}
+        cy={287}
+        r={3}
+        fill={active && !resultVisible ? "var(--ts-accent)" : "var(--ts-line-strong)"}
+        className={active && !resultVisible ? "ts-status-pulse" : undefined}
+      />
+
+      <g
+        opacity={resultVisible ? 1 : 0.35}
+        className="ts-node-transition"
+      >
+        <path
+          d="M 31 360 H 278 L 288 370 V 430 H 31 Z"
+          fill={resultVisible ? "var(--ts-result)" : "transparent"}
+          stroke={resultVisible ? "var(--ts-line-strong)" : "var(--ts-line)"}
+        />
+        <text
+          x={44}
+          y={378}
+          className="ts-svg-micro"
+          fill={
+            scenario.id === "allowed" ? "var(--ts-allow)" : "var(--ts-deny)"
+          }
+        >
+          {scenario.id === "allowed" ? "TOOL RESULT" : "TOOL DENIED"}
+        </text>
+        <text x={44} y={399} className="ts-svg-body" fill="var(--ts-text)">
+          {resultVisible ? scenario.agent.result : "Awaiting supervisor…"}
+        </text>
+        <text x={44} y={418} className="ts-svg-code" fill="var(--ts-muted)">
+          {resultVisible ? scenario.agent.resultMeta : "policy evaluation pending"}
+        </text>
+      </g>
+    </g>
+  );
+}
+
+function AuditSpine({
+  events,
+  sealing,
+  runId,
+}: {
+  events: { label: string; tone?: "allow" | "deny" }[];
+  sealing: boolean;
+  runId: number;
+}) {
+  return (
+    <g>
+      <text x={176} y={500} className="ts-svg-label" fill="var(--ts-faint)">
+        TAMPER-EVIDENT AUDIT
+      </text>
+      <path d={PATHS["audit-lane"]} fill="none" stroke="var(--ts-line-strong)" />
+      {events.map((event, index) => {
+        const x = 220 + index * 112;
+        const color =
+          event.tone === "deny"
+            ? "var(--ts-deny)"
+            : event.tone === "allow"
+              ? "var(--ts-allow)"
+              : "var(--ts-accent)";
+        return (
+          <g
+            key={`${event.label}-${index}-${runId}`}
+            className="animate-fade-in"
+            style={{ animationDelay: `${index * 70}ms` }}
+          >
+            <circle cx={x} cy={520} r={4} fill="var(--ts-bg)" stroke={color} />
+            <path d={`M ${x + 4} 520 H ${x + 104}`} stroke="var(--ts-line)" />
+            <text x={x} y={542} textAnchor="middle" className="ts-svg-micro" fill="var(--ts-muted)">
+              {event.label}
+            </text>
+          </g>
+        );
+      })}
+
+      <g transform="translate(1000 488)">
+        <path
+          d="M 0 28 L 18 14 M 36 28 L 18 14 M 18 14 L 54 0 M 72 14 L 54 0 M 90 28 L 72 14"
+          fill="none"
+          stroke={sealing ? "var(--ts-accent)" : "var(--ts-line-strong)"}
+          className={sealing ? "animate-corner-draw" : undefined}
+          pathLength={sealing ? 100 : undefined}
+          strokeDasharray={sealing ? 100 : undefined}
+          strokeDashoffset={sealing ? 100 : undefined}
+        />
+        {[0, 18, 36, 54, 72, 90].map((x, i) => (
+          <rect
+            key={x}
+            x={x - 3}
+            y={(i === 1 || i === 4 ? 14 : i === 3 ? 0 : 28) - 3}
+            width={6}
+            height={6}
+            fill={sealing && i === 3 ? "var(--ts-accent)" : "var(--ts-bg)"}
+            stroke={sealing ? "var(--ts-accent)" : "var(--ts-line-strong)"}
+          />
+        ))}
+        <text x={54} y={54} textAnchor="middle" className="ts-svg-code" fill="var(--ts-muted)">
+          9a3b7c1d…6082
+        </text>
+      </g>
     </g>
   );
 }
@@ -177,335 +332,287 @@ export default function DesktopDiagram({
 }: DesktopDiagramProps) {
   const step = scenario.steps[stepIndex];
   const reached = scenario.steps.slice(0, stepIndex + 1);
+  const active = (id: StageId) => step.active.includes(id);
 
-  const isActive = (id: StageId) => step.active.includes(id);
+  const resolveReached = reached.some((item) => item.phase === "RESOLVE");
+  const argvBadge = reached.find((item) => item.badge?.stage === "argv")?.badge;
+  const proxyBadge = reached.find((item) => item.badge?.stage === "proxy")?.badge;
+  const capabilityReached = reached.some((item) => item.id === "capabilities");
+  const credentialReached = reached.some((item) => item.id === "credential");
+  const githubReached = reached.some((item) => item.active.includes("github"));
+  const outputReached = reached.some((item) => item.id === "output");
+  const sealed = reached.some((item) => item.active.includes("merkle"));
+  const sealing = animate && active("merkle");
+  const denied = argvBadge?.verdict === "DENY" || proxyBadge?.verdict === "DENY";
+  const resultVisible = scenario.id === "allowed" ? outputReached : denied;
 
-  const argvBadgeIdx = scenario.steps.findIndex((s) => s.badge?.stage === "argv");
-  const proxyBadgeIdx = scenario.steps.findIndex((s) => s.badge?.stage === "proxy");
-  const argvBadge = argvBadgeIdx !== -1 && stepIndex >= argvBadgeIdx ? scenario.steps[argvBadgeIdx].badge : undefined;
-  const proxyBadge = proxyBadgeIdx !== -1 && stepIndex >= proxyBadgeIdx ? scenario.steps[proxyBadgeIdx].badge : undefined;
+  const sandboxPresent = ["materializing", "active", "collapsing"].includes(step.sandbox);
+  const materializing = animate && step.sandbox === "materializing";
+  const collapsing = animate && step.sandbox === "collapsing";
 
-  const resolveIdx = scenario.steps.findIndex((s) => s.phase === "RESOLVE");
-  const resolved = resolveIdx !== -1 && stepIndex >= resolveIdx;
+  const command =
+    scenario.command.length > 71
+      ? `${scenario.command.slice(0, 68)}…`
+      : scenario.command;
 
-  const sealed = reached.some((s) => s.active.includes("merkle"));
-  const sealing = animate && step.active.includes("merkle");
-  const auditActive = isActive("audit");
-
-  const vis = step.sandbox;
-  const sandboxPresent = vis === "materializing" || vis === "active" || vis === "collapsing";
-  const materializing = animate && vis === "materializing";
-
-  const capsIdxExplicit = scenario.steps.findIndex((s) => s.id === "capabilities");
-  const spawnIdx = scenario.steps.findIndex((s) => s.sandbox === "materializing");
-  const capsIdx = capsIdxExplicit !== -1 ? capsIdxExplicit : spawnIdx;
-  const capsShown = sandboxPresent && capsIdx !== -1 && stepIndex >= capsIdx;
-  const capsAppearing = animate && stepIndex === capsIdx;
-
-  const phantomIdx = scenario.steps.findIndex((s) =>
-    s.pulses?.some((p) => p.path === "phantom-cred")
-  );
-  const phantomShown = sandboxPresent && (phantomIdx === -1 || stepIndex >= phantomIdx);
-  const phantomAppearing = animate && stepIndex === phantomIdx;
-
-  const shortCommand =
-    scenario.command.split(" ").slice(0, 3).join(" ") + " …";
-
-  const subFor = (stage: StageBox): string => {
-    if (stage.id === "resolver" && resolved) return "exec: gh → verified";
-    if (stage.id === "argv" && argvBadge) return argvBadge.rule;
-    if (stage.id === "proxy" && proxyBadge) return proxyBadge.rule;
-    return stage.sub;
+  const gateValue = (id: StageId) => {
+    if (id === "resolver" && resolveReached) return "gh · digest verified";
+    if (id === "argv" && argvBadge) return argvBadge.rule.replace(" → ALLOW", "").replace(" → DENY", "");
+    if (id === "capability" && sandboxPresent) return "read-only · proxy-only";
+    if (id === "credential" && credentialReached) return "real token remains here";
+    return "";
   };
+
+  const events: { label: string; tone?: "allow" | "deny" }[] = [];
+  if (resolveReached) events.push({ label: "resolve" });
+  if (argvBadge)
+    events.push({
+      label: `argv.${argvBadge.verdict.toLowerCase()}`,
+      tone: argvBadge.verdict === "ALLOW" ? "allow" : "deny",
+    });
+  if (sandboxPresent) events.push({ label: "spawn" });
+  if (credentialReached) events.push({ label: "credential" });
+  if (proxyBadge)
+    events.push({
+      label: `l7.${proxyBadge.verdict.toLowerCase()}`,
+      tone: proxyBadge.verdict === "ALLOW" ? "allow" : "deny",
+    });
+  if (sealed) events.push({ label: "seal" });
 
   return (
     <svg
-      viewBox="0 0 960 520"
+      viewBox="0 0 1200 580"
       className="h-auto w-full"
       aria-hidden="true"
       focusable="false"
       role="presentation"
     >
-      {/* ── base connectors ── */}
-      <g fill="none" stroke="var(--muted)" strokeWidth={1}>
-        <path d={PATHS["agent-supervisor"]} />
-        <path d={PATHS["proxy-github"]} />
-        {STATIC_CHEVRONS.map((d) => (
-          <path key={d} d={d} strokeLinejoin="round" />
-        ))}
-      </g>
-      <g fill="none" stroke="var(--muted)" strokeWidth={1} strokeDasharray="2 4">
-        <path d={PATHS["audit-drop-argv"]} />
-        <path d={PATHS["audit-drop-proxy"]} />
-      </g>
-      {/* connectors that only exist while the micro sandbox exists */}
-      <g
-        fill="none"
-        stroke="var(--muted)"
-        strokeWidth={1}
-        opacity={sandboxPresent ? 1 : 0}
-        className="ts-node-transition"
-      >
-        <path d={PATHS.spawn} />
-        <path d={PATHS["phantom-cred"]} />
-        <path d={PATHS.egress} />
-        <path d={PATHS["audit-drop-sandbox"]} strokeDasharray="2 4" />
-        {SANDBOX_CHEVRONS.map((d) => (
-          <path key={d} d={d} strokeLinejoin="round" />
-        ))}
-      </g>
+      <defs>
+        <pattern id="ts-dots" width="16" height="16" patternUnits="userSpaceOnUse">
+          <circle cx="1" cy="1" r=".55" fill="var(--ts-grid)" />
+        </pattern>
+      </defs>
+      <rect width="1200" height="580" fill="url(#ts-dots)" opacity=".8" />
 
-      {/* ── coding agent node ── */}
-      <NodeBox x={24} y={180} w={132} h={88} active={isActive("agent")}>
-        <text x={36} y={212} fontSize={12} fill="var(--foreground)">
-          coding agent
-        </text>
-        <text x={36} y={232} fontSize={9} fill="var(--muted-strong)" className="font-code">
-          $ {shortCommand}
-        </text>
-      </NodeBox>
-
-      {/* ── supervisor boundary ── */}
-      <rect
-        x={204}
-        y={64}
-        width={300}
-        height={352}
-        fill="var(--surface)"
-        stroke="var(--muted)"
-        strokeWidth={1}
+      <AgentSurface
+        scenario={scenario}
+        active={active("agent") || active("argv")}
+        resultVisible={resultVisible}
       />
-      <text
-        x={216}
-        y={84}
-        fontSize={10}
-        fill="var(--muted-strong)"
-        className="uppercase tracking-[0.15em]"
-      >
-        nono supervisor
-      </text>
 
-      {/* ── supervisor stages ── */}
-      {STAGES.map((stage) => (
-        <NodeBox key={stage.id} x={228} y={stage.y} w={252} h={48} active={isActive(stage.id)}>
-          <text x={240} y={stage.y + 19} fontSize={12} fill="var(--foreground)">
-            {stage.title}
-          </text>
-          {stage.id === "credential" ? (
-            <>
-              {/* real credential stays supervisor-side: lock + stop tick at the boundary */}
-              <g stroke="var(--muted-strong)" fill="none" strokeWidth={1}>
-                <rect x={240} y={306} width={7} height={5.5} rx={0.8} />
-                <path d="M 241.5 306 v -1.8 a 2 2 0 0 1 4 0 v 1.8" />
-              </g>
-              <text x={252} y={312} fontSize={9} fill="var(--muted-strong)" className="font-code">
-                real GH_TOKEN · supervisor-side
-              </text>
-              <path d="M 424 309 H 496" stroke="var(--muted)" strokeWidth={1} strokeDasharray="2 3" fill="none" />
-              <path d="M 496 303 V 315" stroke="var(--muted-strong)" strokeWidth={1.5} fill="none" />
-            </>
-          ) : (
-            <text
-              x={240}
-              y={stage.y + 36}
-              fontSize={9.5}
-              fill="var(--muted-strong)"
-              className="font-code"
-            >
-              {subFor(stage)}
-            </text>
-          )}
-        </NodeBox>
+      {/* The structured tool call becomes a concrete executable invocation here. */}
+      <g opacity={resolveReached ? 1 : 0} className="ts-node-transition">
+        <path d={cutRect(350, 82, 554, 36, 8)} fill="var(--ts-panel)" stroke="var(--ts-line)" />
+        <text x={364} y={104} className="ts-svg-micro" fill="var(--ts-accent)">
+          RESOLVED INVOCATION
+        </text>
+        <text x={478} y={104} className="ts-svg-code" fill="var(--ts-text)">
+          {command}
+        </text>
+      </g>
+
+      {/* Broker control spine: a sequence of gates, not one generic container. */}
+      <text x={350} y={136} className="ts-svg-label" fill="var(--ts-muted)">
+        NONO · CAPABILITY BROKER
+      </text>
+      <path d="M 338 150 V 402" stroke="var(--ts-line-strong)" />
+      {GATES.map((gate) => (
+        <g key={gate.id}>
+          <path d={`M 338 ${gate.y + 27} H 350`} stroke="var(--ts-line-strong)" />
+          <Gate
+            gate={gate}
+            active={active(gate.id)}
+            value={gateValue(gate.id)}
+            verdict={gate.id === "argv" ? argvBadge?.verdict : undefined}
+          />
+        </g>
       ))}
 
-      {/* ── verdict badges ── */}
-      {argvBadge && (
-        <VerdictBadge
-          key={`argv-${scenario.id}-${runId}`}
-          x={416}
-          y={171}
-          verdict={argvBadge.verdict}
-          appear={animate && stepIndex === argvBadgeIdx}
+      {/* Real credential is visibly locked to the supervisor side. */}
+      <g opacity={credentialReached ? 1 : 0.45} className="ts-node-transition">
+        <path
+          d="M 365 367 h 11 v 10 h -11 z M 367 367 v -3 a 3.5 3.5 0 0 1 7 0 v 3"
+          fill="none"
+          stroke={credentialReached ? "var(--ts-accent)" : "var(--ts-muted)"}
         />
-      )}
-      {proxyBadge && (
-        <VerdictBadge
-          key={`proxy-${scenario.id}-${runId}`}
-          x={416}
-          y={351}
-          verdict={proxyBadge.verdict}
-          appear={animate && stepIndex === proxyBadgeIdx}
-        />
-      )}
+        <path d="M 494 375 H 514 M 514 365 V 385" stroke="var(--ts-deny)" />
+      </g>
 
-      {/* ── micro sandbox (absent until SPAWN, gone after DESTROY) ── */}
+      {/* Ephemeral execution chamber, with gh unmistakably inside it. */}
       {sandboxPresent && (
         <g
-          key={vis === "collapsing" ? `sb-col-${runId}` : "sb-live"}
-          className={animate && vis === "collapsing" ? "animate-collapse-out" : undefined}
+          key={`sandbox-${runId}-${step.sandbox}`}
+          className={collapsing ? "animate-collapse-out" : undefined}
         >
-          <rect
-            key={materializing ? `sb-rect-${runId}` : "sb-rect"}
-            x={SANDBOX.x}
-            y={SANDBOX.y}
-            width={SANDBOX.w}
-            height={SANDBOX.h}
-            fill="var(--surface)"
-            stroke={isActive("sandbox") ? "var(--accent)" : "var(--muted)"}
-            strokeWidth={1}
-            strokeDasharray="4 4"
-            className={cn("ts-node-transition", materializing && "animate-fade-in")}
-            style={materializing ? { animationDelay: "250ms" } : undefined}
+          <path
+            d={SANDBOX_PATH}
+            fill="var(--ts-chamber)"
+            stroke={active("sandbox") ? "var(--ts-accent)" : "var(--ts-line-strong)"}
+            strokeWidth={1.5}
+            pathLength={materializing ? 100 : undefined}
+            strokeDasharray={materializing ? 100 : undefined}
+            strokeDashoffset={materializing ? 100 : undefined}
+            className={cn("ts-node-transition", materializing && "animate-sandbox-draw")}
           />
-          {SANDBOX_CORNERS.map((d, i) => (
-            <path
-              key={materializing ? `sb-corner-${i}-${runId}` : `sb-corner-${i}`}
-              d={d}
-              fill="none"
-              stroke="var(--accent)"
-              strokeWidth={1.5}
-              pathLength={materializing ? 100 : undefined}
-              strokeDasharray={materializing ? 100 : undefined}
-              strokeDashoffset={materializing ? 100 : undefined}
-              className={materializing ? "animate-corner-draw" : undefined}
-            />
-          ))}
-          <g
-            key={materializing ? `sb-head-${runId}` : "sb-head"}
+          <path
+            d={SANDBOX_INNER}
+            fill="none"
+            stroke="var(--ts-line)"
+            strokeDasharray="2 6"
             className={materializing ? "animate-fade-in" : undefined}
-            style={materializing ? { animationDelay: "300ms" } : undefined}
-          >
-            <text x={584} y={124} fontSize={12} fill="var(--foreground)">
-              gh micro sandbox
+          />
+          <path d="M 580 188 H 598 M 886 188 H 904 M 580 382 H 598 M 886 382 H 904" stroke="var(--ts-accent)" strokeWidth={2} />
+          <text x={612} y={166} className="ts-svg-label" fill="var(--ts-accent)">
+            INVOCATION 01
+          </text>
+          <text x={878} y={166} textAnchor="end" className="ts-svg-micro" fill="var(--ts-muted)">
+            EPHEMERAL
+          </text>
+
+          <g className={materializing ? "animate-tool-core-in" : undefined}>
+            <path d={TOOL_CORE} fill="var(--ts-panel-strong)" stroke="var(--ts-accent)" />
+            <path d="M 674 222 L 684 232 H 800 L 810 222 M 674 334 L 684 324 H 800 L 810 334" fill="none" stroke="var(--ts-line-strong)" />
+            <text x={742} y={250} textAnchor="middle" className="ts-svg-micro" fill="var(--ts-faint)">
+              PROCESS MODULE
             </text>
-            <text x={584} y={140} fontSize={9.5} fill="var(--muted-strong)" className="font-code">
-              invocation-scoped · ephemeral
+            <text x={742} y={291} textAnchor="middle" className="ts-svg-tool" fill="var(--ts-text)">
+              <tspan fill="var(--ts-accent)">&gt;_</tspan> gh
+            </text>
+            <text x={742} y={313} textAnchor="middle" className="ts-svg-code" fill="var(--ts-muted)">
+              PID 48291 · issue view 1052
             </text>
           </g>
-          {capsShown &&
-            CAPABILITIES.map((cap, i) => (
-              <text
-                key={capsAppearing ? `cap-${i}-${runId}` : `cap-${i}`}
-                x={584}
-                y={166 + i * 22}
-                fontSize={10}
-                fill="var(--muted-strong)"
-                className={cn("font-code", capsAppearing && "animate-fade-in")}
-                style={
-                  capsAppearing
-                    ? ({ animationDelay: `${300 + i * 120}ms` } as CSSProperties)
-                    : undefined
-                }
-              >
-                {cap}
-              </text>
-            ))}
-          {phantomShown && (
-            <g
-              key={phantomAppearing ? `phantom-${runId}` : "phantom"}
-              className={phantomAppearing ? "animate-fade-in" : undefined}
-              style={phantomAppearing ? { animationDelay: "500ms" } : undefined}
-            >
-              <line x1={584} y1={274} x2={752} y2={274} stroke="var(--border-strong)" strokeWidth={1} />
-              <text x={584} y={296} fontSize={10} fill="var(--accent)" className="font-code">
+
+          {capabilityReached && (
+            <g className="animate-fade-in">
+              <CapabilityPort x={598} y={184} label="FILESYSTEM" value="WORKSPACE · READ" />
+              <CapabilityPort x={886} y={184} align="right" label="WRITES" value="DENIED" danger />
+              <CapabilityPort x={598} y={350} label="STDIO" value="1 MB · BOUNDED" />
+              <CapabilityPort x={886} y={350} align="right" label="NETWORK" value="PROXY ONLY" />
+            </g>
+          )}
+
+          {credentialReached && (
+            <g className="animate-fade-in">
+              <path
+                d="M 650 390 H 834 L 844 400 L 834 410 H 650 L 640 400 Z"
+                fill="var(--ts-active)"
+                stroke="var(--ts-accent)"
+              />
+              <circle cx={662} cy={400} r={4} fill="none" stroke="var(--ts-accent)" />
+              <path d="M 666 400 H 678 M 674 400 V 405" stroke="var(--ts-accent)" />
+              <text x={687} y={404} className="ts-svg-code" fill="var(--ts-text)">
                 {PHANTOM_TOKEN}
-              </text>
-              <text x={584} y={312} fontSize={8.5} fill="var(--muted-strong)" className="font-code">
-                phantom · valid only via nono proxy
               </text>
             </g>
           )}
+
+          {active("sandbox") && <path d="M 616 178 H 868" className="ts-sandbox-scan" />}
         </g>
       )}
 
-      {/* ── GitHub node ── */}
-      <NodeBox x={828} y={364} w={108} h={64} active={isActive("github")}>
-        <text x={840} y={390} fontSize={12} fill="var(--foreground)">
-          GitHub API
-        </text>
-        <text x={840} y={406} fontSize={9} fill="var(--muted-strong)" className="font-code">
-          api.github.com
-        </text>
-      </NodeBox>
-
-      {/* ── audit stream + merkle root ── */}
-      <path
-        d={PATHS["audit-lane"]}
-        fill="none"
-        stroke={auditActive ? "var(--accent)" : "var(--muted)"}
-        strokeWidth={1}
-        className="ts-node-transition"
-      />
-      <text x={204} y={472} fontSize={10} fill="var(--muted-strong)" className="font-code">
-        audit stream · hash-chained
-      </text>
-      {MERKLE_EDGES.map((d, i) => (
+      {/* L7 is a physical gateway: requests cannot route around it. */}
+      <g>
         <path
-          key={sealing ? `me-${i}-${runId}` : `me-${i}`}
-          d={d}
-          fill="none"
-          stroke={sealed ? "var(--muted-strong)" : "var(--muted)"}
-          strokeWidth={1}
-          pathLength={sealing ? 100 : undefined}
-          strokeDasharray={sealing ? 100 : undefined}
-          strokeDashoffset={sealing ? 100 : undefined}
-          className={sealing ? "animate-corner-draw" : "ts-node-transition"}
-          style={sealing ? ({ animationDelay: `${i * 80}ms` } as CSSProperties) : undefined}
-        />
-      ))}
-      {MERKLE_LEAVES.map(([cx, cy]) => (
-        <rect
-          key={`${cx}-${cy}`}
-          x={cx - 2.5}
-          y={cy - 2.5}
-          width={5}
-          height={5}
-          fill="none"
-          stroke="var(--muted-strong)"
-          strokeWidth={1}
+          d={PROXY_GATE}
+          fill={active("proxy") ? "var(--ts-active)" : "var(--ts-panel)"}
+          stroke={
+            proxyBadge?.verdict === "DENY"
+              ? "var(--ts-deny)"
+              : active("proxy")
+                ? "var(--ts-accent)"
+                : "var(--ts-line-strong)"
+          }
           className="ts-node-transition"
         />
-      ))}
-      <rect
-        x={767}
-        y={427}
-        width={6}
-        height={6}
-        fill={sealed ? "var(--accent)" : "none"}
-        stroke={sealed ? "var(--accent)" : "var(--muted)"}
-        strokeWidth={1}
-        className={cn("ts-node-transition", sealing && "animate-fade-in")}
-        style={sealing ? { animationDelay: "600ms" } : undefined}
-      />
-      <text
-        x={770}
-        y={488}
-        fontSize={9.5}
-        fill="var(--muted-strong)"
-        textAnchor="middle"
-        className="font-code"
-      >
-        SHA-256 Merkle root
-      </text>
+        <path d="M 936 266 H 954 M 1026 266 H 1044 M 936 320 H 954 M 1026 320 H 1044" stroke="var(--ts-line-strong)" />
+        <text x={990} y={250} textAnchor="middle" className="ts-svg-label" fill="var(--ts-text)">
+          L7 GATE
+        </text>
+        <text x={990} y={270} textAnchor="middle" className="ts-svg-micro" fill="var(--ts-muted)">
+          LOCALHOST PROXY
+        </text>
+        {proxyBadge ? (
+          <>
+            <text
+              x={990}
+              y={302}
+              textAnchor="middle"
+              className="ts-svg-code"
+              fill={proxyBadge.verdict === "DENY" ? "var(--ts-deny)" : "var(--ts-allow)"}
+            >
+              {proxyBadge.rule.includes("/graphql") ? "POST /graphql" : "POST /…/comments"}
+            </text>
+            <text
+              x={990}
+              y={327}
+              textAnchor="middle"
+              className="ts-svg-label"
+              fill={proxyBadge.verdict === "DENY" ? "var(--ts-deny)" : "var(--ts-allow)"}
+            >
+              {proxyBadge.verdict}
+            </text>
+          </>
+        ) : (
+          <text x={990} y={304} textAnchor="middle" className="ts-svg-code" fill="var(--ts-faint)">
+            method / path
+          </text>
+        )}
+      </g>
 
-      {/* ── signal pulses ── */}
+      {/* API endpoint uses a target form, not another generic rectangle. */}
+      <g opacity={proxyBadge?.verdict === "DENY" ? 0.28 : 1} className="ts-node-transition">
+        <circle
+          cx={1148}
+          cy={294}
+          r={43}
+          fill={githubReached ? "var(--ts-active)" : "var(--ts-panel)"}
+          stroke={githubReached ? "var(--ts-accent)" : "var(--ts-line-strong)"}
+        />
+        <circle cx={1148} cy={294} r={31} fill="none" stroke="var(--ts-line)" strokeDasharray="2 5" />
+        <text x={1148} y={299} textAnchor="middle" className="ts-svg-tool-small" fill="var(--ts-text)">
+          GH
+        </text>
+        <text x={1148} y={352} textAnchor="middle" className="ts-svg-label" fill="var(--ts-muted)">
+          GITHUB API
+        </text>
+        <text x={1148} y={368} textAnchor="middle" className="ts-svg-micro" fill="var(--ts-faint)">
+          api.github.com
+        </text>
+      </g>
+
+      {/* Structural traces and state-specific moving signals. */}
+      <g fill="none" stroke="var(--ts-line-strong)">
+        <path d={PATHS["agent-supervisor"]} />
+        <path d={PATHS.spawn} opacity={sandboxPresent ? 1 : 0.25} />
+        <path d={PATHS.egress} opacity={sandboxPresent ? 1 : 0.25} />
+        <path d={PATHS["proxy-github"]} />
+      </g>
+      <g fill="none" stroke="var(--ts-line)" strokeDasharray="2 5">
+        <path d={PATHS["audit-drop-argv"]} />
+        <path d={PATHS["audit-drop-proxy"]} />
+        <path d={PATHS["audit-drop-sandbox"]} opacity={sandboxPresent ? 1 : 0.2} />
+      </g>
+
+      <AuditSpine events={events} sealing={sealing} runId={runId} />
+
       {animate &&
-        step.pulses?.map((p) => (
+        step.pulses?.map((pulse) => (
           <path
-            key={`${runId}-${stepIndex}-${p.path}-${p.reverse ? "r" : "f"}`}
-            d={PATHS[p.path]}
+            key={`${runId}-${stepIndex}-${pulse.path}-${pulse.reverse ? "r" : "f"}`}
+            d={PATHS[pulse.path]}
             pathLength={100}
             fill="none"
-            stroke="var(--accent)"
-            strokeWidth={1.5}
+            stroke="var(--ts-accent)"
+            strokeWidth={2}
             strokeLinecap="round"
-            strokeDasharray="12 188"
-            strokeDashoffset={p.reverse ? -102 : 14}
-            className={p.reverse ? "animate-pulse-travel-reverse" : "animate-pulse-travel"}
+            strokeDasharray="10 190"
+            strokeDashoffset={pulse.reverse ? -102 : 14}
+            className={pulse.reverse ? "animate-pulse-travel-reverse" : "animate-pulse-travel"}
             style={
               {
-                "--pulse-duration": `${p.durMs ?? Math.max(step.duration - 250, 300)}ms`,
-                animationDelay: p.delayMs ? `${p.delayMs}ms` : undefined,
+                "--pulse-duration": `${pulse.durMs ?? Math.max(step.duration - 250, 300)}ms`,
+                animationDelay: pulse.delayMs ? `${pulse.delayMs}ms` : undefined,
               } as CSSProperties
             }
           />

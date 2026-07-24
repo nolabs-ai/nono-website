@@ -65,7 +65,7 @@ function Step({
 
 export default function GetStarted() {
   return (
-    <section id="get-started" className="pb-20 px-6">
+    <section id="get-started" className="px-6 pt-16 pb-20 md:pt-20">
       <div className="mx-auto grid max-w-5xl items-stretch gap-5 md:grid-cols-2">
         {/* Install */}
         <div className="flex flex-col rounded-xl border border-white/10 bg-[#0a0a0a] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] sm:p-6">
