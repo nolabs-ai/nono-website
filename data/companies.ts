@@ -37,14 +37,6 @@ export const companies: Company[] = [
     logo: "/companies/okta.svg",
     href: "https://www.okta.com",
   },
-  // Full-bleed 7:1 wordmark (no padding), so it gets a wider box than the
-  // padded ar21-style logos to sit at a similar optical weight.
-  {
-    name: "JPMorganChase",
-    logo: "/companies/jpmc.svg",
-    href: "https://www.jpmorganchase.com",
-    className: "w-44",
-  },
   // Full-bleed stacked lockup (glyph over wordmark); slightly shorter box so
   // it doesn't tower over the padded single-line wordmarks.
   {
