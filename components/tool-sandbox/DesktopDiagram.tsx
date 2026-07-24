@@ -19,7 +19,7 @@ const PATHS: Record<PathId, string> = {
   "phantom-cred": "M 520 382 H 646",
   egress: "M 906 294 H 936",
   "proxy-github": "M 1044 294 H 1104",
-  "audit-drop-argv": "M 438 270 V 520",
+  "audit-drop-argv": "M 350 243 H 330 V 520",
   "audit-drop-proxy": "M 990 362 V 520",
   "audit-drop-sandbox": "M 742 444 V 520",
   "audit-lane": "M 176 520 H 1094",
@@ -267,7 +267,7 @@ function AuditSpine({
 }) {
   return (
     <g>
-      <text x={176} y={500} className="ts-svg-label" fill="var(--ts-faint)">
+      <text x={176} y={500} className="ts-svg-label" fill="var(--ts-text)">
         TAMPER-EVIDENT AUDIT
       </text>
       <path d={PATHS["audit-lane"]} fill="none" stroke="var(--ts-line-strong)" />
@@ -287,7 +287,7 @@ function AuditSpine({
           >
             <circle cx={x} cy={520} r={4} fill="var(--ts-bg)" stroke={color} />
             <path d={`M ${x + 4} 520 H ${x + 104}`} stroke="var(--ts-line)" />
-            <text x={x} y={542} textAnchor="middle" className="ts-svg-micro" fill="var(--ts-muted)">
+            <text x={x} y={544} textAnchor="middle" className="ts-svg-audit" fill="var(--ts-text)">
               {event.label}
             </text>
           </g>
@@ -412,7 +412,7 @@ export default function DesktopDiagram({
 
       {/* Broker control spine: a sequence of gates, not one generic container. */}
       <text x={350} y={136} className="ts-svg-label" fill="var(--ts-muted)">
-        NONO · CAPABILITY BROKER
+        NONO · POLICY + CAPABILITY BROKER
       </text>
       <path d="M 338 150 V 402" stroke="var(--ts-line-strong)" />
       {GATES.map((gate) => (
@@ -426,6 +426,40 @@ export default function DesktopDiagram({
           />
         </g>
       ))}
+
+      {/* Only actions outside the provided policy leave the main decision path. */}
+      <g>
+        <path
+          d="M 520 243 H 544 V 443 H 520"
+          fill="none"
+          stroke="var(--ts-line-strong)"
+          strokeDasharray="2 5"
+        />
+        <text x={548} y={340} className="ts-svg-micro" fill="var(--ts-faint)" transform="rotate(90 548 340)">
+          NO POLICY MATCH
+        </text>
+        <path
+          d={cutRect(350, 416, 170, 56, 9)}
+          fill="var(--ts-panel)"
+          stroke="rgba(226,180,111,.55)"
+        />
+        <path
+          d="M 365 438 L 373 430 L 381 438 L 373 446 Z"
+          fill="none"
+          stroke="rgba(226,180,111,.85)"
+        />
+        <circle cx={373} cy={436} r={2.5} fill="rgba(226,180,111,.85)" />
+        <path d="M 368 443 Q 373 438 378 443" fill="none" stroke="rgba(226,180,111,.85)" />
+        <text x={390} y={432} className="ts-svg-micro" fill="rgba(226,180,111,.85)">
+          OUTSIDE PROVIDED POLICY
+        </text>
+        <text x={390} y={450} className="ts-svg-label" fill="var(--ts-text)">
+          HUMAN APPROVAL
+        </text>
+        <text x={390} y={464} className="ts-svg-micro" fill="var(--ts-muted)">
+          approve · deny · timeout
+        </text>
+      </g>
 
       {/* Real credential is visibly locked to the supervisor side. */}
       <g opacity={credentialReached ? 1 : 0.45} className="ts-node-transition">
@@ -644,7 +678,7 @@ export default function DesktopDiagram({
           L7 PROXY
         </text>
         <text x={990} y={257} textAnchor="middle" className="ts-svg-micro" fill="var(--ts-muted)">
-          LOCALHOST · INSPECT · EXCHANGE
+          INSPECT
         </text>
         {proxyBadge ? (
           <>
@@ -676,7 +710,11 @@ export default function DesktopDiagram({
 
       {/* The upstream is a globe rather than an abstract GH target, making the
           sandbox → proxy → internet path legible at a glance. */}
-      <g opacity={proxyBadge?.verdict === "DENY" ? 0.28 : 1} className="ts-node-transition">
+      <g
+        transform="translate(-28 0)"
+        opacity={proxyBadge?.verdict === "DENY" ? 0.28 : 1}
+        className="ts-node-transition"
+      >
         <circle
           cx={1148}
           cy={294}

@@ -217,6 +217,13 @@ html {
   font-size: 9px;
 }
 
+.ts-svg-audit {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+}
+
 .ts-svg-micro {
   font-size: 7.5px;
   letter-spacing: 0.08em;

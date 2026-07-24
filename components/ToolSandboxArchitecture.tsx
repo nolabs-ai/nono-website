@@ -184,9 +184,11 @@ export default function ToolSandboxArchitecture() {
             credential stays with the supervisor and never enters the child. The proxy
             validates the phantom token, evaluates HTTP method and path policy, injects
             the real credential at the boundary, and forwards over TLS to
-            api.github.com. Security-relevant events are hash-chained into an audit
-            record sealed with a SHA-256 Merkle root, and the sandbox is destroyed when
-            the invocation exits. Three scenarios: Allowed read — gh issue view runs,
+            api.github.com. If an action falls outside the provided policy, the policy
+            engine can route it to a human approval decision to approve, deny, or time
+            out. Security-relevant events are hash-chained into an audit record sealed
+            with a SHA-256 Merkle root, and the sandbox is destroyed when the invocation
+            exits. Three scenarios: Allowed read — gh issue view runs,
             POST /graphql is allowed by the proxy, and output returns to the coding agent.
             Argv denied — gh issue comment is refused at argv authorization; no sandbox
             or outbound request is ever created. L7 denied — gh api passes the broad

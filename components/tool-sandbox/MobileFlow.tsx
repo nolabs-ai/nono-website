@@ -169,6 +169,18 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
             );
           })}
         </div>
+        <div className="relative mt-3 border border-[#e2b46f]/35 bg-[#e2b46f]/[0.035] px-3 py-2.5">
+          <div className="absolute -top-3 left-5 h-3 border-l border-dashed border-white/20" />
+          <div className="font-code text-[7px] tracking-[0.14em] text-[#d7a968]">
+            OUTSIDE PROVIDED POLICY
+          </div>
+          <div className="mt-1 flex items-center justify-between gap-3">
+            <span className="text-[10px] font-semibold tracking-wide text-[#e8e7e2]">
+              Human approval
+            </span>
+            <code className="text-[8px] text-[#777c77]">approve · deny · timeout</code>
+          </div>
+        </div>
       </div>
 
       <TraceArrow active={step.phase === "SPAWN"} />
@@ -258,7 +270,7 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
               L7 PROXY
             </div>
             <div className="mt-1 font-code text-[8px] text-[#666b66]">
-              LOCALHOST · INSPECT · EXCHANGE
+              INSPECT
             </div>
           </div>
           {proxyBadge && <Verdict value={proxyBadge.verdict} />}
@@ -321,10 +333,10 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
       <div className="border-t border-white/10 pt-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="font-code text-[8px] tracking-[0.15em] text-[#666b66]">
+            <div className="font-code text-[9px] font-medium tracking-[0.15em] text-[#d0d1cb]">
               TAMPER-EVIDENT AUDIT
             </div>
-            <code className="mt-2 block text-[9px] text-[#929690]">
+            <code className="mt-2 block text-[10px] font-medium text-[#c3c5bf]">
               resolve → argv → spawn → l7 → seal
             </code>
           </div>
