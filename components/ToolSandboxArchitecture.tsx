@@ -166,7 +166,7 @@ export default function ToolSandboxArchitecture() {
             Every tool execution. Isolated and scoped.
           </h2>
           <p className="mb-3 text-[11px] font-mono uppercase tracking-[0.18em] text-[#b8bbb5]">
-            Micro Sandbox
+            Brokered Tool Execution
           </p>
           <p className="mx-auto max-w-2xl text-sm leading-relaxed text-[#949892] md:text-base">
             Every tool call gets an ephemeral micro tool sandbox, scoped to only the

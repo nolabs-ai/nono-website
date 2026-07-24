@@ -255,10 +255,10 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
         <div className="flex items-center justify-between">
           <div>
             <div className="font-code text-[9px] tracking-[0.15em] text-[#d4d4ce]">
-              L7 GATE
+              L7 PROXY
             </div>
             <div className="mt-1 font-code text-[8px] text-[#666b66]">
-              LOCALHOST PROXY · METHOD / PATH
+              LOCALHOST · INSPECT · EXCHANGE
             </div>
           </div>
           {proxyBadge && <Verdict value={proxyBadge.verdict} />}
@@ -268,18 +268,51 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
             {proxyBadge.rule.replace(" → ALLOW", "").replace(" → DENY", "")}
           </code>
         )}
-        <div className="mt-4 flex items-center justify-end gap-3">
+        <div className="mt-4 flex items-center gap-2">
+          <span className="font-code text-[7px] text-[#666b66]">IN</span>
+          <div className="h-px flex-1 bg-[#e8734a]/60" />
+          <div className="flex size-8 items-center justify-center rounded-full border border-white/15 font-code text-[10px] text-[#e8734a]">
+            ⇄
+          </div>
           <div className="h-px flex-1 bg-white/10" />
-          <div
+          <span className="font-code text-[7px] text-[#666b66]">OUT</span>
+          <svg
+            viewBox="0 0 48 48"
             className={cn(
-              "flex size-12 items-center justify-center rounded-full border font-code text-xs",
+              "size-12",
+              proxyBadge?.verdict === "DENY" && "opacity-35"
+            )}
+            aria-hidden="true"
+          >
+            <circle cx="24" cy="24" r="21" fill="none" stroke="rgba(255,255,255,.18)" />
+            <ellipse cx="24" cy="24" rx="9" ry="21" fill="none" stroke="rgba(255,255,255,.14)" />
+            <path
+              d="M4 17 Q24 24 44 17 M4 31 Q24 24 44 31 M3 24 H45"
+              fill="none"
+              stroke="rgba(255,255,255,.14)"
+            />
+            <path
+              d="M16 10 L22 8 L27 12 L33 11 L37 16 L33 21 L25 21 L21 26 L15 22 L12 16 Z"
+              fill={proxyBadge?.verdict === "ALLOW" ? "#e8734a" : "rgba(255,255,255,.15)"}
+              opacity=".7"
+            />
+            <circle
+              cx="36"
+              cy="14"
+              r="2.5"
+              fill={proxyBadge?.verdict === "ALLOW" ? "#e8734a" : "#666b66"}
+            />
+          </svg>
+        </div>
+        <div
+            className={cn(
+              "mt-2 text-right font-code text-[7px] tracking-wider",
               proxyBadge?.verdict === "DENY"
-                ? "border-white/[0.06] text-[#444844] opacity-40"
-                : "border-white/15 text-[#c8c8c2]"
+                ? "text-[#444844]"
+                : "text-[#777c77]"
             )}
           >
-            GH
-          </div>
+            INTERNET · API.GITHUB.COM
         </div>
       </div>
 

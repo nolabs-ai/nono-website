@@ -5,7 +5,6 @@ import {
   type Scenario,
   type StageId,
 } from "./scenarios";
-import { cn } from "@/lib/utils";
 
 interface DesktopDiagramProps {
   scenario: Scenario;
@@ -46,7 +45,7 @@ const SANDBOX_INNER =
 const TOOL_CORE =
   "M 674 222 H 810 L 828 240 V 316 L 810 334 H 674 L 656 316 V 240 Z";
 const PROXY_GATE =
-  "M 956 218 H 1024 L 1044 238 V 346 L 1028 362 H 952 L 936 346 V 238 Z";
+  "M 950 218 H 1030 L 1044 232 V 348 L 1030 362 H 950 L 936 348 V 232 Z";
 
 function cutRect(x: number, y: number, w: number, h: number, cut = 10) {
   return `M ${x} ${y} H ${x + w - cut} L ${x + w} ${y + cut} V ${
@@ -381,7 +380,7 @@ export default function DesktopDiagram({
 
   return (
     <svg
-      viewBox="0 0 1200 580"
+      viewBox="0 58 1200 510"
       className="h-auto w-full"
       aria-hidden="true"
       focusable="false"
@@ -400,14 +399,14 @@ export default function DesktopDiagram({
         resultVisible={resultVisible}
       />
 
-      {/* The structured tool call becomes a concrete executable invocation here. */}
-      <g opacity={resolveReached ? 1 : 0} className="ts-node-transition">
+      {/* The agent's intent becomes a concrete executable invocation here. */}
+      <g opacity={resolveReached ? 1 : 0.58} className="ts-node-transition">
         <path d={cutRect(350, 82, 554, 36, 8)} fill="var(--ts-panel)" stroke="var(--ts-line)" />
         <text x={364} y={104} className="ts-svg-micro" fill="var(--ts-accent)">
-          RESOLVED INVOCATION
+          {resolveReached ? "RESOLVED INVOCATION" : "TOOL INTENT"}
         </text>
         <text x={478} y={104} className="ts-svg-code" fill="var(--ts-text)">
-          {command}
+          {resolveReached ? command : scenario.agent.tool}
         </text>
       </g>
 
@@ -438,38 +437,144 @@ export default function DesktopDiagram({
         <path d="M 494 375 H 514 M 514 365 V 385" stroke="var(--ts-deny)" />
       </g>
 
-      {/* Ephemeral execution chamber, with gh unmistakably inside it. */}
-      {sandboxPresent && (
+      {/* A dormant execution slot fills the pre-authorization state without
+          implying that a sandbox or child process already exists. */}
+      {!sandboxPresent && (
         <g
-          key={`sandbox-${runId}-${step.sandbox}`}
-          className={collapsing ? "animate-collapse-out" : undefined}
+          className="ts-node-transition"
+          opacity={1}
         >
           <path
             d={SANDBOX_PATH}
             fill="var(--ts-chamber)"
-            stroke={active("sandbox") ? "var(--ts-accent)" : "var(--ts-line-strong)"}
-            strokeWidth={1.5}
-            pathLength={materializing ? 100 : undefined}
-            strokeDasharray={materializing ? 100 : undefined}
-            strokeDashoffset={materializing ? 100 : undefined}
-            className={cn("ts-node-transition", materializing && "animate-sandbox-draw")}
+            stroke={argvBadge?.verdict === "DENY" ? "var(--ts-deny)" : "var(--ts-line-strong)"}
+            strokeWidth={1.25}
           />
           <path
             d={SANDBOX_INNER}
             fill="none"
             stroke="var(--ts-line)"
             strokeDasharray="2 6"
-            className={materializing ? "animate-fade-in" : undefined}
+          />
+          <text x={612} y={166} className="ts-svg-label" fill="var(--ts-muted)">
+            NONO MICRO SANDBOX
+          </text>
+          <text x={878} y={166} textAnchor="end" className="ts-svg-micro" fill="var(--ts-faint)">
+            INVOCATION-SCOPED
+          </text>
+
+          <path
+            d="M 610 184 H 590 V 204 M 874 184 H 894 V 204 M 610 404 H 590 V 384 M 874 404 H 894 V 384"
+            fill="none"
+            stroke={argvBadge?.verdict === "DENY" ? "var(--ts-deny)" : "var(--ts-line-strong)"}
+          />
+          <circle
+            cx={742}
+            cy={294}
+            r={112}
+            fill="none"
+            stroke="var(--ts-line)"
+            strokeDasharray="1 9"
+          />
+          <path
+            d="M 658 220 A 112 112 0 0 1 826 220 M 826 368 A 112 112 0 0 1 658 368"
+            fill="none"
+            stroke="var(--ts-line-strong)"
+          />
+          <path
+            d={TOOL_CORE}
+            fill="rgba(255,255,255,0.012)"
+            stroke={argvBadge?.verdict === "DENY" ? "var(--ts-deny)" : "var(--ts-line-strong)"}
+          />
+          <path
+            d="M 674 222 L 684 232 H 800 L 810 222 M 674 334 L 684 324 H 800 L 810 334"
+            fill="none"
+            stroke="var(--ts-line)"
+          />
+          <text x={742} y={250} textAnchor="middle" className="ts-svg-micro" fill="var(--ts-faint)">
+            PROCESS BAY
+          </text>
+          <circle
+            cx={742}
+            cy={281}
+            r={17}
+            fill="none"
+            stroke={argvBadge?.verdict === "DENY" ? "var(--ts-deny)" : "var(--ts-line-strong)"}
+          />
+          <path
+            d={
+              argvBadge?.verdict === "DENY"
+                ? "M 734 273 L 750 289 M 750 273 L 734 289"
+                : "M 742 269 V 293 M 730 281 H 754"
+            }
+            stroke={argvBadge?.verdict === "DENY" ? "var(--ts-deny)" : "var(--ts-faint)"}
+          />
+          <text
+            x={742}
+            y={320}
+            textAnchor="middle"
+            className="ts-svg-label"
+            fill={argvBadge?.verdict === "DENY" ? "var(--ts-deny)" : "var(--ts-faint)"}
+          >
+            {argvBadge?.verdict === "DENY" ? "SPAWN SUPPRESSED" : "AWAITING SYSCALL"}
+          </text>
+          <path d="M 628 294 H 654 M 830 294 H 856" stroke="var(--ts-line-strong)" />
+          <text x={742} y={430} textAnchor="middle" className="ts-svg-micro" fill="var(--ts-faint)">
+            {argvBadge?.verdict === "DENY"
+              ? "NO CHILD PROCESS CREATED"
+              : "BOUNDARY ACTIVATES AFTER AUTHORIZATION"}
+          </text>
+        </g>
+      )}
+
+      {/* Ephemeral execution chamber, with gh unmistakably inside it. */}
+      {sandboxPresent && (
+        <g
+          key={`sandbox-${runId}-${step.sandbox}`}
+          className={collapsing ? "animate-collapse-out" : undefined}
+        >
+          {/* The complete edge remains visible while an orange signal traces it. */}
+          <path
+            d={SANDBOX_PATH}
+            fill="var(--ts-chamber)"
+            stroke="var(--ts-line-strong)"
+            strokeWidth={1.25}
+          />
+          {materializing ? (
+            <path
+              d={SANDBOX_PATH}
+              fill="none"
+              stroke="var(--ts-accent)"
+              strokeWidth={1.75}
+              pathLength={100}
+              strokeDasharray={100}
+              strokeDashoffset={100}
+              className="animate-sandbox-draw"
+            />
+          ) : (
+            <path
+              d={SANDBOX_PATH}
+              fill="none"
+              stroke={active("sandbox") ? "var(--ts-accent)" : "var(--ts-line-strong)"}
+              strokeWidth={1.5}
+              className="ts-node-transition"
+            />
+          )}
+          <path
+            d={SANDBOX_INNER}
+            fill="none"
+            stroke="var(--ts-line)"
+            strokeDasharray="2 6"
           />
           <path d="M 580 188 H 598 M 886 188 H 904 M 580 382 H 598 M 886 382 H 904" stroke="var(--ts-accent)" strokeWidth={2} />
           <text x={612} y={166} className="ts-svg-label" fill="var(--ts-accent)">
-            INVOCATION 01
+            NONO MICRO SANDBOX
           </text>
           <text x={878} y={166} textAnchor="end" className="ts-svg-micro" fill="var(--ts-muted)">
-            EPHEMERAL
+            INVOCATION-SCOPED
           </text>
 
-          <g className={materializing ? "animate-tool-core-in" : undefined}>
+          <g>
             <path d={TOOL_CORE} fill="var(--ts-panel-strong)" stroke="var(--ts-accent)" />
             <path d="M 674 222 L 684 232 H 800 L 810 222 M 674 334 L 684 324 H 800 L 810 334" fill="none" stroke="var(--ts-line-strong)" />
             <text x={742} y={250} textAnchor="middle" className="ts-svg-micro" fill="var(--ts-faint)">
@@ -525,18 +630,27 @@ export default function DesktopDiagram({
           }
           className="ts-node-transition"
         />
-        <path d="M 936 266 H 954 M 1026 266 H 1044 M 936 320 H 954 M 1026 320 H 1044" stroke="var(--ts-line-strong)" />
-        <text x={990} y={250} textAnchor="middle" className="ts-svg-label" fill="var(--ts-text)">
-          L7 GATE
+        {/* Distinct ingress and egress ports make the intermediary role explicit. */}
+        <path d="M 936 258 H 954 M 1026 258 H 1044 M 936 322 H 954 M 1026 322 H 1044" stroke="var(--ts-line-strong)" />
+        <path d="M 948 287 H 968 L 974 281 M 968 287 L 974 293" fill="none" stroke="var(--ts-accent)" />
+        <path d="M 1006 287 H 1026 L 1020 281 M 1026 287 L 1020 293" fill="none" stroke="var(--ts-line-strong)" />
+        <circle cx={990} cy={287} r={15} fill="var(--ts-panel-strong)" stroke="var(--ts-line-strong)" />
+        <path
+          d="M 982 282 H 997 L 993 278 M 997 282 L 993 286 M 998 292 H 983 L 987 288 M 983 292 L 987 296"
+          fill="none"
+          stroke={active("proxy") ? "var(--ts-accent)" : "var(--ts-muted)"}
+        />
+        <text x={990} y={242} textAnchor="middle" className="ts-svg-label" fill="var(--ts-text)">
+          L7 PROXY
         </text>
-        <text x={990} y={270} textAnchor="middle" className="ts-svg-micro" fill="var(--ts-muted)">
-          LOCALHOST PROXY
+        <text x={990} y={257} textAnchor="middle" className="ts-svg-micro" fill="var(--ts-muted)">
+          LOCALHOST · INSPECT · EXCHANGE
         </text>
         {proxyBadge ? (
           <>
             <text
               x={990}
-              y={302}
+              y={320}
               textAnchor="middle"
               className="ts-svg-code"
               fill={proxyBadge.verdict === "DENY" ? "var(--ts-deny)" : "var(--ts-allow)"}
@@ -545,7 +659,7 @@ export default function DesktopDiagram({
             </text>
             <text
               x={990}
-              y={327}
+              y={344}
               textAnchor="middle"
               className="ts-svg-label"
               fill={proxyBadge.verdict === "DENY" ? "var(--ts-deny)" : "var(--ts-allow)"}
@@ -554,13 +668,14 @@ export default function DesktopDiagram({
             </text>
           </>
         ) : (
-          <text x={990} y={304} textAnchor="middle" className="ts-svg-code" fill="var(--ts-faint)">
+          <text x={990} y={329} textAnchor="middle" className="ts-svg-code" fill="var(--ts-faint)">
             method / path
           </text>
         )}
       </g>
 
-      {/* API endpoint uses a target form, not another generic rectangle. */}
+      {/* The upstream is a globe rather than an abstract GH target, making the
+          sandbox → proxy → internet path legible at a glance. */}
       <g opacity={proxyBadge?.verdict === "DENY" ? 0.28 : 1} className="ts-node-transition">
         <circle
           cx={1148}
@@ -569,12 +684,27 @@ export default function DesktopDiagram({
           fill={githubReached ? "var(--ts-active)" : "var(--ts-panel)"}
           stroke={githubReached ? "var(--ts-accent)" : "var(--ts-line-strong)"}
         />
-        <circle cx={1148} cy={294} r={31} fill="none" stroke="var(--ts-line)" strokeDasharray="2 5" />
-        <text x={1148} y={299} textAnchor="middle" className="ts-svg-tool-small" fill="var(--ts-text)">
-          GH
-        </text>
+        <ellipse cx={1148} cy={294} rx={18} ry={43} fill="none" stroke="var(--ts-line-strong)" />
+        <path
+          d="M 1108 280 Q 1148 294 1188 280 M 1108 308 Q 1148 294 1188 308 M 1105 294 H 1191"
+          fill="none"
+          stroke="var(--ts-line-strong)"
+        />
+        <path
+          d="M 1132 266 L 1142 262 L 1150 267 L 1158 265 L 1165 274 L 1160 282 L 1148 284 L 1142 292 L 1132 286 L 1127 276 Z
+             M 1155 300 L 1166 304 L 1169 316 L 1161 326 L 1153 318 L 1148 308 Z"
+          fill={githubReached ? "var(--ts-accent)" : "var(--ts-line-strong)"}
+          opacity={githubReached ? 0.8 : 0.45}
+        />
+        <circle
+          cx={1170}
+          cy={276}
+          r={3.5}
+          fill={githubReached ? "var(--ts-accent)" : "var(--ts-muted)"}
+          className={githubReached ? "ts-status-pulse" : undefined}
+        />
         <text x={1148} y={352} textAnchor="middle" className="ts-svg-label" fill="var(--ts-muted)">
-          GITHUB API
+          INTERNET · GITHUB API
         </text>
         <text x={1148} y={368} textAnchor="middle" className="ts-svg-micro" fill="var(--ts-faint)">
           api.github.com
