@@ -27,7 +27,7 @@ The part that gave me pause: the training job it launches runs with full interne
 
 ## Why nono
 
-[nono](https://github.com/always-further/nono) is a tool that puts hard limits on what an agent is allowed to do at the operating system level — not just by telling it what not to do, but by making those actions technically impossible. It is built on [Linux Landlock (kernel 5.13+) and macOS Seatbelt](/os-sandbox), enforcing restrictions at the syscall level.
+[nono](https://github.com/nolabs-ai/nono) is a tool that puts hard limits on what an agent is allowed to do at the operating system level — not just by telling it what not to do, but by making those actions technically impossible. It is built on [Linux Landlock (kernel 5.13+) and macOS Seatbelt](/os-sandbox), enforcing restrictions at the syscall level.
 
 The key property for this use case is child process inheritance: restrictions applied to the agent cascade automatically to every process it spawns. So when autoresearch kicks off a training job, that job runs under the same constraints as the agent itself — with no additional configuration. Most application-level sandboxes do not have this property. nono's kernel-level enforcement closes that gap.
 
