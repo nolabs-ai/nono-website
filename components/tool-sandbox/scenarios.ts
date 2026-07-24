@@ -4,7 +4,7 @@ export type RailPhase =
   | "AUTHORIZE"
   | "SPAWN"
   | "EXECUTE"
-  | "SEAL"
+  | "AUDIT"
   | "DESTROY";
 
 export const RAIL_PHASES: RailPhase[] = [
@@ -13,7 +13,7 @@ export const RAIL_PHASES: RailPhase[] = [
   "AUTHORIZE",
   "SPAWN",
   "EXECUTE",
-  "SEAL",
+  "AUDIT",
   "DESTROY",
 ];
 
@@ -201,7 +201,7 @@ export const SCENARIOS: Scenario[] = [
       },
       {
         id: "seal",
-        phase: "SEAL",
+        phase: "AUDIT",
         duration: 1400,
         active: ["audit", "merkle"],
         pulses: [
@@ -280,7 +280,7 @@ export const SCENARIOS: Scenario[] = [
       },
       {
         id: "audit",
-        phase: "SEAL",
+        phase: "AUDIT",
         duration: 1500,
         active: ["audit", "merkle"],
         pulses: [
@@ -293,7 +293,7 @@ export const SCENARIOS: Scenario[] = [
       },
       {
         id: "hold",
-        phase: "SEAL",
+        phase: "AUDIT",
         duration: 3000,
         active: [],
         sandbox: "none",
@@ -374,7 +374,7 @@ export const SCENARIOS: Scenario[] = [
       },
       {
         id: "audit",
-        phase: "SEAL",
+        phase: "AUDIT",
         duration: 1400,
         active: ["audit", "merkle"],
         pulses: [

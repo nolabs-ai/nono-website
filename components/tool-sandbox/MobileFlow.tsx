@@ -328,7 +328,7 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
         </div>
       </div>
 
-      <TraceArrow active={step.phase === "SEAL"} />
+      <TraceArrow active={step.phase === "AUDIT"} />
 
       <div className="border-t border-white/10 pt-4">
         <div className="flex items-start justify-between gap-4">
