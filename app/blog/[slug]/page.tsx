@@ -28,12 +28,15 @@ export async function generateMetadata({
   try {
     const post = getPostBySlug(slug);
     const seoTitle = post.seoTitle ?? post.title;
+    // The "%s | nono" template only applies to `title`; brand OG/Twitter
+    // explicitly so social cards match the document title and site convention.
+    const brandedTitle = `${seoTitle} | nono`;
     return {
       title: seoTitle,
       description: post.description,
       alternates: { canonical: `/blog/${slug}` },
       openGraph: {
-        title: seoTitle,
+        title: brandedTitle,
         description: post.description,
         type: "article",
         publishedTime: post.date,
@@ -52,7 +55,7 @@ export async function generateMetadata({
       },
       twitter: {
         card: "summary_large_image",
-        title: seoTitle,
+        title: brandedTitle,
         description: post.description,
         images: post.image ? [post.image] : [`/blog/${slug}/opengraph-image`],
       },
