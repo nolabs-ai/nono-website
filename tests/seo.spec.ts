@@ -81,7 +81,7 @@ test.describe("Blog SEO", () => {
     const scripts = await page.locator('script[type="application/ld+json"]').allTextContents();
     const schemas = scripts.map((script) => JSON.parse(script));
 
-    expect(schemas.some((schema) => schema["@type"] === "BlogPosting")).toBe(true);
+    expect(schemas.some((schema) => schema["@type"] === "Article")).toBe(true);
     expect(schemas.some((schema) => schema["@type"] === "BreadcrumbList")).toBe(true);
   });
 });
