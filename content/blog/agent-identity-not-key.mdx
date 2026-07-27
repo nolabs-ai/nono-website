@@ -1,7 +1,7 @@
 ---
 title: "The agent gets an identity, not a key"
 seoTitle: "SPIFFE workload identity for AI agents: replacing API keys with attested identity"
-date: "2026-07-21"
+date: "2026-07-27"
 description: "Per-invocation brokering solved possession. SPIFFE workload identity attacks the credential itself: short-lived, attested, rotating. See it run live on July 28."
 excerpt: "Per-invocation brokering solved possession: the agent never holds the secret. But the brokered thing is still a static, long-lived credential. SPIFFE workload identity attacks the credential itself: short-lived, attested, automatically rotating. Here is what we built, and how to watch it survive a live attack on July 28."
 author: "Sal Kimmich"
@@ -49,6 +49,13 @@ On Tuesday, July 28 at 4pm UK / 11am ET, Aleksy Siek, founding maintainer, runs 
 Register at [luma.com/73tz35ak](https://luma.com/73tz35ak): the stream link goes to registrants.
 
 If you want to walk the setup yourself before or after, you do not need to stand up full SPIRE infrastructure to try the pattern: [spiffecli](https://github.com/defakto-security/spiffecli) gives you a Workload API with one command, and the PR is open for review at [nolabs-ai/nono#1272](https://github.com/nolabs-ai/nono/pull/1272). The hard question you bring is the feature someone else needs. Last time that happened, it shipped in eight weeks.
+
+## Go deeper
+
+- **[Credential Injection](/credential-injection)** — the per-invocation broker and phantom-token pattern this identity work rides on
+- **[Runtime Supervisor](/runtime-supervisor)** — the trusted parent that obtains the SVID at startup and brokers every request
+- **[OS Sandbox](/os-sandbox)** — the kernel-level isolation that keeps the credential out of the agent's reach
+- **[Audit Trail](/audit-trail)** — how every brokered invocation lands in a hash-chained, tamper-evident record
 
 ---
 
