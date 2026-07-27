@@ -7,7 +7,7 @@ interface BlogPostSchemaProps {
 export default function BlogPostSchema({ post }: BlogPostSchemaProps) {
   const schema = {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
+    "@type": "Article",
     headline: post.title,
     description: post.description,
     datePublished: post.date,
