@@ -1,7 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import { BookOpen, Scale } from "lucide-react";
 import { Github } from "./icons/GithubIcon";
-import { AfLogo } from "@/components/AfLogo";
 import { DOCS_URL } from "@/lib/site";
 
 const DiscordIcon = ({ size = 18 }: { size?: number }) => (
@@ -135,7 +135,13 @@ export default function Footer() {
               rel="noopener noreferrer"
               className="text-foreground opacity-50 hover:opacity-100 transition-opacity"
             >
-              <AfLogo width={120} height={24} />
+              <Image
+                src="/nolabs-logo.svg"
+                alt="nolabs"
+                width={125}
+                height={40}
+                className="h-8 w-auto"
+              />
             </a>
           </div>
 
