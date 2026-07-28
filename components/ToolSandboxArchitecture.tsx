@@ -262,7 +262,6 @@ export default function ToolSandboxArchitecture() {
             );
           })}
         </ol>
-
         <div
           aria-hidden="true"
           className="mt-3 hidden overflow-hidden border border-white/[0.08] bg-[#090b0b]/70 shadow-[0_30px_90px_rgba(0,0,0,0.32)] lg:block"

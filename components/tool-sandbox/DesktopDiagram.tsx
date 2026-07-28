@@ -15,14 +15,14 @@ interface DesktopDiagramProps {
 
 const PATHS: Record<PathId, string> = {
   "agent-supervisor": "M 300 294 H 350",
-  spawn: "M 520 294 H 580",
-  "phantom-cred": "M 520 382 H 646",
-  egress: "M 906 294 H 936",
-  "proxy-github": "M 1044 294 H 1104",
-  "audit-drop-argv": "M 350 243 H 330 V 520",
-  "audit-drop-proxy": "M 990 362 V 520",
-  "audit-drop-sandbox": "M 742 444 V 520",
-  "audit-lane": "M 176 520 H 1094",
+  spawn: "M 520 294 H 720",
+  "phantom-cred": "M 520 382 H 786",
+  egress: "M 1046 294 H 1076",
+  "proxy-github": "M 1184 294 H 1244",
+  "audit-drop-argv": "M 438 270 V 520",
+  "audit-drop-proxy": "M 1130 362 V 520",
+  "audit-drop-sandbox": "M 882 444 V 520",
+  "audit-lane": "M 176 520 H 1234",
 };
 
 const GATES: {
@@ -294,7 +294,7 @@ function AuditSpine({
         );
       })}
 
-      <g transform="translate(1000 488)">
+      <g transform="translate(1140 488)">
         <path
           d="M 0 28 L 18 14 M 36 28 L 18 14 M 18 14 L 54 0 M 72 14 L 54 0 M 90 28 L 72 14"
           fill="none"
@@ -380,7 +380,7 @@ export default function DesktopDiagram({
 
   return (
     <svg
-      viewBox="0 58 1200 510"
+      viewBox="0 58 1340 510"
       className="h-auto w-full"
       aria-hidden="true"
       focusable="false"
@@ -427,38 +427,46 @@ export default function DesktopDiagram({
         </g>
       ))}
 
-      {/* Only actions outside the provided policy leave the main decision path. */}
+      {/* A genuine external breakout: unmatched policy decisions leave the
+          main path for a separately bounded human approval service. */}
       <g>
         <path
-          d="M 520 243 H 544 V 443 H 520"
+          d="M 520 243 H 540"
           fill="none"
-          stroke="var(--ts-line-strong)"
-          strokeDasharray="2 5"
+          stroke="rgba(226,180,111,.7)"
         />
-        <text x={548} y={340} className="ts-svg-micro" fill="var(--ts-faint)" transform="rotate(90 548 340)">
-          NO POLICY MATCH
-        </text>
         <path
-          d={cutRect(350, 416, 170, 56, 9)}
+          d={cutRect(540, 190, 156, 96, 11)}
           fill="var(--ts-panel)"
-          stroke="rgba(226,180,111,.55)"
+          stroke="rgba(226,180,111,.65)"
         />
         <path
-          d="M 365 438 L 373 430 L 381 438 L 373 446 Z"
+          d="M 548 238 L 553 243 L 548 248"
           fill="none"
           stroke="rgba(226,180,111,.85)"
         />
-        <circle cx={373} cy={436} r={2.5} fill="rgba(226,180,111,.85)" />
-        <path d="M 368 443 Q 373 438 378 443" fill="none" stroke="rgba(226,180,111,.85)" />
-        <text x={390} y={432} className="ts-svg-micro" fill="rgba(226,180,111,.85)">
+        <circle cx={675} cy={220} r={6} fill="none" stroke="rgba(226,180,111,.85)" />
+        <path d="M 665 237 Q 675 226 685 237" fill="none" stroke="rgba(226,180,111,.85)" />
+        <text x={552} y={209} className="ts-svg-micro" fill="rgba(226,180,111,.85)">
           OUTSIDE PROVIDED POLICY
         </text>
-        <text x={390} y={450} className="ts-svg-label" fill="var(--ts-text)">
+        <text x={552} y={231} className="ts-svg-label" fill="var(--ts-text)">
           HUMAN APPROVAL
         </text>
-        <text x={390} y={464} className="ts-svg-micro" fill="var(--ts-muted)">
-          approve · deny · timeout
+        <path d="M 552 243 H 684" stroke="var(--ts-line)" />
+        <text x={552} y={261} className="ts-svg-code" fill="var(--ts-muted)">
+          approve · deny
         </text>
+        <text x={552} y={276} className="ts-svg-micro" fill="var(--ts-faint)">
+          HUMAN-IN-THE-LOOP
+        </text>
+        {/* Approval can rejoin the normal scoped execution path. */}
+        <path
+          d="M 696 243 H 708 V 294 H 720"
+          fill="none"
+          stroke="rgba(226,180,111,.45)"
+          strokeDasharray="2 4"
+        />
       </g>
 
       {/* Real credential is visibly locked to the supervisor side. */}
@@ -475,6 +483,7 @@ export default function DesktopDiagram({
           implying that a sandbox or child process already exists. */}
       {!sandboxPresent && (
         <g
+          transform="translate(140 0)"
           className="ts-node-transition"
           opacity={1}
         >
@@ -564,6 +573,7 @@ export default function DesktopDiagram({
       {/* Ephemeral execution chamber, with gh unmistakably inside it. */}
       {sandboxPresent && (
         <g
+          transform="translate(140 0)"
           key={`sandbox-${runId}-${step.sandbox}`}
           className={collapsing ? "animate-collapse-out" : undefined}
         >
@@ -652,6 +662,7 @@ export default function DesktopDiagram({
 
       {/* L7 is a physical gateway: requests cannot route around it. */}
       <g>
+        <g transform="translate(140 0)">
         <path
           d={PROXY_GATE}
           fill={active("proxy") ? "var(--ts-active)" : "var(--ts-panel)"}
@@ -706,12 +717,13 @@ export default function DesktopDiagram({
             method / path
           </text>
         )}
+        </g>
       </g>
 
       {/* The upstream is a globe rather than an abstract GH target, making the
           sandbox → proxy → internet path legible at a glance. */}
       <g
-        transform="translate(-28 0)"
+        transform="translate(112 0)"
         opacity={proxyBadge?.verdict === "DENY" ? 0.28 : 1}
         className="ts-node-transition"
       >

@@ -17,9 +17,8 @@ export default function Home() {
       <Header />
       <main>
         <Hero />
-        <ToolSandboxArchitecture />
         <GetStarted />
-        <div className="h-px bg-border" />
+        <ToolSandboxArchitecture />
         <SupportedAgents />
         <div className="h-px bg-border" />
         <ScaleBand />

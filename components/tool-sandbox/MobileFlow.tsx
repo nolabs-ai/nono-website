@@ -123,7 +123,7 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
 
       <div className="border border-white/10 bg-[#0e1111] p-4">
         <div className="mb-3 font-code text-[9px] tracking-[0.16em] text-[#8b8f8a]">
-          NONO · CAPABILITY BROKER
+          NONO · POLICY + CAPABILITY BROKER
         </div>
         {resolved && (
           <code className="mb-3 block break-all border border-white/[0.08] bg-black/20 p-2 text-[9px] leading-relaxed text-[#c8c8c2]">
@@ -169,17 +169,21 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
             );
           })}
         </div>
-        <div className="relative mt-3 border border-[#e2b46f]/35 bg-[#e2b46f]/[0.035] px-3 py-2.5">
-          <div className="absolute -top-3 left-5 h-3 border-l border-dashed border-white/20" />
-          <div className="font-code text-[7px] tracking-[0.14em] text-[#d7a968]">
-            OUTSIDE PROVIDED POLICY
-          </div>
-          <div className="mt-1 flex items-center justify-between gap-3">
-            <span className="text-[10px] font-semibold tracking-wide text-[#e8e7e2]">
-              Human approval
-            </span>
-            <code className="text-[8px] text-[#777c77]">approve · deny · timeout</code>
-          </div>
+      </div>
+
+      <div className="relative ml-10 mt-3 border border-[#e2b46f]/45 bg-[#11120f] px-3 py-3">
+        <div className="absolute top-5 -left-10 w-10 border-t border-dashed border-[#e2b46f]/40" />
+        <div className="font-code text-[7px] tracking-[0.14em] text-[#d7a968]">
+          OUTSIDE PROVIDED POLICY
+        </div>
+        <div className="mt-1 flex items-center justify-between gap-3">
+          <span className="text-[10px] font-semibold tracking-wide text-[#e8e7e2]">
+            Human approval
+          </span>
+          <code className="text-[8px] text-[#92958f]">approve · deny</code>
+        </div>
+        <div className="mt-1 font-code text-[7px] tracking-wider text-[#565b56]">
+          HUMAN-IN-THE-LOOP
         </div>
       </div>
 
@@ -195,9 +199,9 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
       >
         <div className="mb-5 flex items-center justify-between">
           <span className="font-code text-[9px] tracking-[0.15em] text-[#e8734a]">
-            INVOCATION 01
+            NONO MICRO SANDBOX
           </span>
-          <span className="font-code text-[8px] text-[#666b66]">EPHEMERAL</span>
+          <span className="font-code text-[8px] text-[#666b66]">INVOCATION-SCOPED</span>
         </div>
 
         {spawned ? (
@@ -247,7 +251,7 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
           <div className="flex min-h-40 items-center justify-center text-center font-code text-[9px] text-[#555a55]">
             {argvBadge?.verdict === "DENY"
               ? "NO SANDBOX CREATED · BLOCKED AT ARGV"
-              : "AWAITING AUTHORIZATION"}
+              : "AWAITING SYSCALL"}
           </div>
         )}
       </div>
