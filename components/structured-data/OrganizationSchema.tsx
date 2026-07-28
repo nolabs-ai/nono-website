@@ -3,12 +3,12 @@ export default function OrganizationSchema() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Always Further",
-    url: "https://alwaysfurther.ai",
+    url: "https://nolabs.ai",
     logo: "https://nono.sh/logo.png",
     sameAs: [
       "https://github.com/nolabs-ai",
-      "https://x.com/alwaysfurtherAI",
-      "https://bsky.app/profile/alwaysfurther.ai",
+      "https://x.com/nolabs_ai",
+      "https://bsky.app/profile/nolabs.ai",
     ],
   };
 

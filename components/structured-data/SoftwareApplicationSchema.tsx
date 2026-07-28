@@ -17,7 +17,7 @@ export default function SoftwareApplicationSchema() {
     author: {
       '@type': 'Organization',
       name: 'Always Further',
-      url: 'https://alwaysfurther.ai',
+      url: 'https://nolabs.ai',
     },
   };
 

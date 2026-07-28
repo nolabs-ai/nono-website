@@ -9,7 +9,7 @@ export default function WebSiteSchema() {
     publisher: {
       '@type': 'Organization',
       name: 'Always Further',
-      url: 'https://alwaysfurther.ai',
+      url: 'https://nolabs.ai',
     },
   };
 

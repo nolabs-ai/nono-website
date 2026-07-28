@@ -85,7 +85,7 @@ export default function Footer() {
             We&apos;re taking on design partners.
           </p>
           <a
-            href="https://alwaysfurther.ai/design-partners"
+            href="https://nolabs.ai/design-partners"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-foreground hover:text-muted-strong transition-colors shrink-0"
@@ -130,7 +130,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-8 border-t border-border">
           <div className="flex items-center gap-4">
             <a
-              href="https://alwaysfurther.ai?utm_source=nono-sh"
+              href="https://nolabs.ai?utm_source=nono-sh"
               target="_blank"
               rel="noopener noreferrer"
               className="text-foreground opacity-50 hover:opacity-100 transition-opacity"
