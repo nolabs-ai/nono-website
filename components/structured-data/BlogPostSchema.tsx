@@ -19,7 +19,7 @@ export default function BlogPostSchema({ post }: BlogPostSchemaProps) {
     publisher: {
       "@type": "Organization",
       name: "Always Further",
-      url: "https://alwaysfurther.ai",
+      url: "https://nolabs.ai",
       logo: {
         "@type": "ImageObject",
         url: "https://nono.sh/logo.png",

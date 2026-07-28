@@ -22,7 +22,7 @@ export interface SupportedAgent {
 }
 
 const profile = (slug: string) =>
-  `${REGISTRY_URL}/packages/always-further/${slug}`;
+  `${REGISTRY_URL}/packages/nolabs-ai/${slug}`;
 
 export const supportedAgents: SupportedAgent[] = [
   { name: "Claude Code", logo: "/agents/claude.svg", href: profile("claude") },

@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     title: "Sandbox for AI Agents — Kernel-Level Isolation | nono",
     description:
       "Kernel-enforced isolation, network filtering, immutable auditing, and atomic rollbacks for AI agents - built into the nono CLI and native SDKs.",
-    site: "@alwaysfurtherAI",
+    site: "@nolabs",
     images: ["/logo.png"],
   },
 };
