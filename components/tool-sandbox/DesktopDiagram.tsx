@@ -448,27 +448,27 @@ export default function DesktopDiagram({
             <path
               d={PATHS.escalate}
               fill="none"
-              stroke={humanReached ? "rgba(226,180,111,.85)" : "rgba(226,180,111,.45)"}
+              stroke={humanReached ? "var(--ts-warn)" : "var(--ts-warn-dim)"}
               className="ts-node-transition"
             />
             <path
               d="M 549 183 L 554 188 L 549 193"
               fill="none"
-              stroke={humanReached ? "rgba(226,180,111,.85)" : "rgba(226,180,111,.5)"}
+              stroke={humanReached ? "var(--ts-warn)" : "var(--ts-warn-dim)"}
               className="ts-node-transition"
             />
           </>
         )}
         <path
           d={cutRect(556, 140, 156, 96, 11)}
-          fill={humanReached ? "rgba(226,180,111,.06)" : "var(--ts-panel)"}
+          fill={humanReached ? "var(--ts-warn-surface)" : "var(--ts-panel)"}
           stroke={
             humanApproved
               ? "var(--ts-allow)"
               : humanPending
-                ? "rgba(226,180,111,.95)"
+                ? "var(--ts-warn)"
                 : humanScenario
-                  ? "rgba(226,180,111,.65)"
+                  ? "var(--ts-warn-dim)"
                   : "var(--ts-line-strong)"
           }
           className="ts-node-transition"
@@ -478,20 +478,20 @@ export default function DesktopDiagram({
           cy={166}
           r={6}
           fill="none"
-          stroke={humanScenario ? "rgba(226,180,111,.85)" : "var(--ts-line-strong)"}
+          stroke={humanScenario ? "var(--ts-warn)" : "var(--ts-line-strong)"}
           className="ts-node-transition"
         />
         <path
           d="M 680 183 Q 690 172 700 183"
           fill="none"
-          stroke={humanScenario ? "rgba(226,180,111,.85)" : "var(--ts-line-strong)"}
+          stroke={humanScenario ? "var(--ts-warn)" : "var(--ts-line-strong)"}
           className="ts-node-transition"
         />
         <text
           x={568}
           y={159}
           className="ts-svg-micro ts-node-transition"
-          fill={humanScenario ? "rgba(226,180,111,.85)" : "var(--ts-faint)"}
+          fill={humanScenario ? "var(--ts-warn)" : "var(--ts-faint)"}
         >
           OUTSIDE PROVIDED POLICY
         </text>
@@ -532,8 +532,8 @@ export default function DesktopDiagram({
           </g>
         ) : humanPending ? (
           <g>
-            <circle cx={572} cy={223} r={3} fill="rgba(226,180,111,.9)" className="ts-status-pulse" />
-            <text x={582} y={226} className="ts-svg-micro" fill="rgba(226,180,111,.9)">
+            <circle cx={572} cy={223} r={3} fill="var(--ts-warn)" className="ts-status-pulse" />
+            <text x={582} y={226} className="ts-svg-micro" fill="var(--ts-warn)">
               PENDING
             </text>
           </g>
@@ -549,7 +549,7 @@ export default function DesktopDiagram({
               d={PATHS["approval-return"]}
               fill="none"
               stroke={
-                humanApproved ? "rgba(226,180,111,.8)" : "rgba(226,180,111,.45)"
+                humanApproved ? "var(--ts-warn)" : "var(--ts-warn-dim)"
               }
               strokeDasharray="2 4"
               className="ts-node-transition"
@@ -557,7 +557,7 @@ export default function DesktopDiagram({
             <path
               d="M 630 287 L 634 292 L 638 287"
               fill="none"
-              stroke={humanApproved ? "rgba(226,180,111,.8)" : "rgba(226,180,111,.5)"}
+              stroke={humanApproved ? "var(--ts-warn)" : "var(--ts-warn-dim)"}
               className="ts-node-transition"
             />
           </>
@@ -621,7 +621,7 @@ export default function DesktopDiagram({
           />
           <path
             d={TOOL_CORE}
-            fill="rgba(255,255,255,0.012)"
+            fill="var(--ts-ghost)"
             stroke={argvBadge?.verdict === "DENY" ? "var(--ts-deny)" : "var(--ts-line-strong)"}
           />
           <path

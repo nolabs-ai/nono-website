@@ -158,9 +158,48 @@ html {
   animation: flow-dash 1.5s linear infinite;
 }
 
-/* Tool sandbox architecture (components/ToolSandboxArchitecture.tsx) */
+/* Tool sandbox architecture (components/ToolSandboxArchitecture.tsx).
+   The stage carries its own palette so the diagram reads as one schematic;
+   light values are the default, dark overrides follow the site's
+   [data-theme] switch. */
 
 .ts-stage {
+  --ts-bg: #f3f2ee;
+  --ts-panel: #faf9f6;
+  --ts-panel-strong: #ffffff;
+  --ts-chamber: rgba(207, 91, 50, 0.035);
+  --ts-active: rgba(207, 91, 50, 0.08);
+  --ts-result: rgba(28, 29, 27, 0.035);
+  --ts-grid: rgba(28, 29, 27, 0.14);
+  --ts-line: rgba(28, 29, 27, 0.13);
+  --ts-line-strong: rgba(28, 29, 27, 0.3);
+  --ts-text: #22231f;
+  --ts-text-soft: #4b4e48;
+  --ts-muted: #5f645e;
+  --ts-faint: #8f948d;
+  --ts-accent: #cf5b32;
+  --ts-allow: #177a55;
+  --ts-deny: #c03a3a;
+  --ts-warn: #a3742f;
+  --ts-warn-dim: rgba(163, 116, 47, 0.5);
+  --ts-warn-surface: rgba(163, 116, 47, 0.08);
+  --ts-ghost: rgba(28, 29, 27, 0.015);
+  --ts-inset: rgba(28, 29, 27, 0.045);
+  --ts-surface: rgba(28, 29, 27, 0.04);
+  --ts-surface-faint: rgba(28, 29, 27, 0.02);
+  --ts-shadow: 0 30px 90px rgba(28, 29, 27, 0.12);
+  --ts-grid-line: rgba(28, 29, 27, 0.025);
+  --ts-glow: rgba(207, 91, 50, 0.055);
+  --ts-glow-top: rgba(255, 255, 255, 0.5);
+  --ts-glow-bottom: rgba(28, 29, 27, 0.045);
+  background:
+    linear-gradient(var(--ts-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ts-grid-line) 1px, transparent 1px),
+    var(--ts-bg);
+  background-size: 48px 48px;
+}
+
+[data-theme="dark"] .ts-stage {
   --ts-bg: #090b0b;
   --ts-panel: #101313;
   --ts-panel-strong: #151919;
@@ -171,22 +210,30 @@ html {
   --ts-line: rgba(224, 226, 218, 0.1);
   --ts-line-strong: rgba(224, 226, 218, 0.22);
   --ts-text: #efeee9;
+  --ts-text-soft: #d2d3cd;
   --ts-muted: #8b908a;
   --ts-faint: #565c57;
   --ts-accent: #e8734a;
   --ts-allow: #45b78a;
   --ts-deny: #ef6a6a;
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-    var(--ts-bg);
-  background-size: 48px 48px;
+  --ts-warn: #e2b46f;
+  --ts-warn-dim: rgba(226, 180, 111, 0.45);
+  --ts-warn-surface: rgba(226, 180, 111, 0.06);
+  --ts-ghost: rgba(255, 255, 255, 0.012);
+  --ts-inset: rgba(0, 0, 0, 0.2);
+  --ts-surface: rgba(255, 255, 255, 0.035);
+  --ts-surface-faint: rgba(255, 255, 255, 0.015);
+  --ts-shadow: 0 30px 90px rgba(0, 0, 0, 0.32);
+  --ts-grid-line: rgba(255, 255, 255, 0.018);
+  --ts-glow: rgba(232, 115, 74, 0.075);
+  --ts-glow-top: rgba(255, 255, 255, 0.018);
+  --ts-glow-bottom: rgba(0, 0, 0, 0.2);
 }
 
 .ts-stage-glow {
   background:
-    radial-gradient(circle at 50% 48%, rgba(232, 115, 74, 0.075), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 24%, transparent 76%, rgba(0, 0, 0, 0.2));
+    radial-gradient(circle at 50% 48%, var(--ts-glow), transparent 34%),
+    linear-gradient(180deg, var(--ts-glow-top), transparent 24%, transparent 76%, var(--ts-glow-bottom));
 }
 
 .ts-svg-label,

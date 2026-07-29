@@ -150,25 +150,25 @@ export default function ToolSandboxArchitecture() {
     <section
       ref={sectionRef}
       aria-labelledby="tool-sandbox-heading"
-      className="ts-stage relative isolate overflow-hidden border-y border-white/[0.08] px-6 py-20 text-[#f3f2ed] md:py-24"
+      className="ts-stage relative isolate overflow-hidden border-y border-(--ts-line) px-6 py-20 text-(--ts-text) md:py-24"
     >
       <div aria-hidden="true" className="ts-stage-glow absolute inset-0 -z-10" />
       <div className="mx-auto max-w-7xl">
         <div className="text-center">
-          <span className="mb-5 inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-[#e8734a]">
-            <span className="inline-block size-1.5 bg-[#e8734a]" aria-hidden="true" />
+          <span className="mb-5 inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-(--ts-accent)">
+            <span className="inline-block size-1.5 bg-(--ts-accent)" aria-hidden="true" />
             Tool Sandbox
           </span>
           <h2
             id="tool-sandbox-heading"
-            className="mx-auto mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-[-0.035em] text-[#f3f2ed] md:text-5xl"
+            className="mx-auto mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-[-0.035em] text-(--ts-text) md:text-5xl"
           >
             Every tool execution. Isolated and scoped.
           </h2>
-          <p className="mb-3 text-[11px] font-mono uppercase tracking-[0.18em] text-[#b8bbb5]">
+          <p className="mb-3 text-[11px] font-mono uppercase tracking-[0.18em] text-(--ts-text-soft)">
             Brokered Tool Execution
           </p>
-          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-[#949892] md:text-base">
+          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-(--ts-muted) md:text-base">
             Every tool call gets an ephemeral micro tool sandbox, scoped to only the
             files, network routes, arguments, and credentials it needs. Every decision
             is auditable.
@@ -214,15 +214,15 @@ export default function ToolSandboxArchitecture() {
                 onClick={() => dispatch({ type: "SELECT", id: s.id })}
                 className={cn(
                   "cursor-pointer border px-3.5 py-2 text-[10px] font-mono uppercase tracking-[0.14em] transition-colors",
-                  "focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-[#e8734a]",
+                  "focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-(--ts-accent)",
                   selected
-                    ? "border-[#e8734a] bg-[#e8734a]/10 text-[#f3f2ed]"
-                    : "border-white/10 bg-white/[0.025] text-[#777c77] hover:border-white/20 hover:text-[#d8d8d2]"
+                    ? "border-(--ts-accent) bg-(--ts-active) text-(--ts-text)"
+                    : "border-(--ts-line) bg-(--ts-surface-faint) text-(--ts-muted) hover:border-(--ts-line-strong) hover:text-(--ts-text-soft)"
                 )}
               >
                 <span
                   aria-hidden="true"
-                  className={cn("mr-1.5 text-[8px]", selected ? "text-[#e8734a]" : "text-transparent")}
+                  className={cn("mr-1.5 text-[8px]", selected ? "text-(--ts-accent)" : "text-transparent")}
                 >
                   ●
                 </span>
@@ -240,20 +240,20 @@ export default function ToolSandboxArchitecture() {
             const status = phaseStatus(phase, scenario, step.phase, terminal);
             return (
               <li key={phase} className="flex items-center gap-x-3">
-                {i > 0 && <span className="text-[10px] text-white/15">→</span>}
+                {i > 0 && <span className="text-[10px] text-(--ts-line-strong)">→</span>}
                 <span
                   className={cn(
                     "text-[11px] font-mono uppercase tracking-[0.15em] transition-colors",
-                    status === "active" && "text-[#f3f2ed]",
-                    status === "done" && "text-[#8b8f8a]",
-                    status === "pending" && "text-[#4e524e]",
-                    status === "skipped" && "text-[#4e524e] line-through opacity-50"
+                    status === "active" && "text-(--ts-text)",
+                    status === "done" && "text-(--ts-muted)",
+                    status === "pending" && "text-(--ts-faint)",
+                    status === "skipped" && "text-(--ts-faint) line-through opacity-50"
                   )}
                 >
                   <span
                     className={cn(
                       "mr-1 text-[8px]",
-                      status === "active" ? "text-[#e8734a]" : "text-transparent"
+                      status === "active" ? "text-(--ts-accent)" : "text-transparent"
                     )}
                   >
                     ●
@@ -266,7 +266,7 @@ export default function ToolSandboxArchitecture() {
         </ol>
         <div
           aria-hidden="true"
-          className="mt-3 hidden overflow-hidden border border-white/[0.08] bg-[#090b0b]/70 shadow-[0_30px_90px_rgba(0,0,0,0.32)] lg:block"
+          className="mt-3 hidden overflow-hidden border border-(--ts-line) bg-(--ts-bg)/70 shadow-(--ts-shadow) lg:block"
         >
           <DesktopDiagram
             scenario={scenario}
@@ -284,16 +284,16 @@ export default function ToolSandboxArchitecture() {
           aria-hidden="true"
           className="mx-auto mt-5 min-h-10 max-w-2xl text-center text-xs leading-relaxed"
         >
-          <span className="text-[#8b8f8a]">{captionText}</span>
+          <span className="text-(--ts-muted)">{captionText}</span>
           {detailText && (
             <>
               {" "}
-              <code className="break-words text-[#c2c3bd]">{detailText}</code>
+              <code className="break-words text-(--ts-text-soft)">{detailText}</code>
             </>
           )}
         </p>
 
-        <p className="mx-auto mt-6 max-w-2xl text-center text-xs leading-relaxed text-[#686d68]">
+        <p className="mx-auto mt-6 max-w-2xl text-center text-xs leading-relaxed text-(--ts-faint)">
           The agent never talks directly to the isolated tool. Requests, credentials,
           network traffic, stdio, and audit events cross the supervisor boundary.
         </p>

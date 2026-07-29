@@ -12,8 +12,8 @@ function Verdict({ value }: { value: "ALLOW" | "DENY" }) {
       className={cn(
         "border px-1.5 py-0.5 font-code text-[9px] tracking-wider",
         value === "ALLOW"
-          ? "border-[#45b78a]/60 text-[#45b78a]"
-          : "border-[#ef6a6a]/60 text-[#ef6a6a]"
+          ? "border-(--ts-allow)/60 text-(--ts-allow)"
+          : "border-(--ts-deny)/60 text-(--ts-deny)"
       )}
     >
       {value}
@@ -27,13 +27,13 @@ function TraceArrow({ active }: { active?: boolean }) {
       <div
         className={cn(
           "relative w-px",
-          active ? "bg-[#e8734a]" : "bg-white/10"
+          active ? "bg-(--ts-accent)" : "bg-(--ts-line)"
         )}
       >
         <span
           className={cn(
             "absolute -bottom-0.5 -left-[3px] size-[7px] rotate-45 border-r border-b",
-            active ? "border-[#e8734a]" : "border-white/15"
+            active ? "border-(--ts-accent)" : "border-(--ts-line-strong)"
           )}
         />
       </div>
@@ -66,36 +66,36 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
 
   return (
     <div className="mx-auto max-w-md">
-      <div className="ts-mobile-panel border border-white/10 bg-[#101313] p-4">
-        <div className="mb-4 flex items-center justify-between border-b border-white/[0.08] pb-3">
+      <div className="ts-mobile-panel border border-(--ts-line) bg-(--ts-panel) p-4">
+        <div className="mb-4 flex items-center justify-between border-b border-(--ts-line) pb-3">
           <div className="flex items-center gap-2">
-            <span className="size-1.5 bg-[#e8734a]" />
-            <span className="font-code text-[9px] tracking-[0.16em] text-[#8b8f8a]">
+            <span className="size-1.5 bg-(--ts-accent)" />
+            <span className="font-code text-[9px] tracking-[0.16em] text-(--ts-muted)">
               AGENT SESSION
             </span>
           </div>
-          <span className="font-code text-[8px] text-[#565b56]">LIVE</span>
+          <span className="font-code text-[8px] text-(--ts-faint)">LIVE</span>
         </div>
 
         <div className="space-y-4">
           <div>
-            <div className="mb-1 font-code text-[8px] tracking-wider text-[#666b66]">
+            <div className="mb-1 font-code text-[8px] tracking-wider text-(--ts-faint)">
               USER
             </div>
-            <p className="text-xs text-[#e7e6e1]">{scenario.agent.user}</p>
+            <p className="text-xs text-(--ts-text)">{scenario.agent.user}</p>
           </div>
           <div>
-            <div className="mb-1 font-code text-[8px] tracking-wider text-[#e8734a]">
+            <div className="mb-1 font-code text-[8px] tracking-wider text-(--ts-accent)">
               AGENT
             </div>
-            <p className="text-xs text-[#e7e6e1]">{scenario.agent.response}</p>
+            <p className="text-xs text-(--ts-text)">{scenario.agent.response}</p>
           </div>
-          <div className="border-l-2 border-[#e8734a] bg-white/[0.035] p-3">
-            <div className="mb-1 font-code text-[8px] tracking-wider text-[#777c77]">
+          <div className="border-l-2 border-(--ts-accent) bg-(--ts-surface) p-3">
+            <div className="mb-1 font-code text-[8px] tracking-wider text-(--ts-muted)">
               TOOL CALL
             </div>
-            <div className="text-xs font-medium text-[#f3f2ed]">{scenario.agent.tool}</div>
-            <code className="mt-1 block text-[10px] text-[#8b8f8a]">
+            <div className="text-xs font-medium text-(--ts-text)">{scenario.agent.tool}</div>
+            <code className="mt-1 block text-[10px] text-(--ts-muted)">
               {scenario.agent.toolMeta}
             </code>
           </div>
@@ -103,22 +103,22 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
             className={cn(
               "border p-3 transition-opacity",
               resultVisible
-                ? "border-white/10 bg-white/[0.035] opacity-100"
-                : "border-white/[0.06] opacity-40"
+                ? "border-(--ts-line) bg-(--ts-surface) opacity-100"
+                : "border-(--ts-line) opacity-40"
             )}
           >
             <div
               className={cn(
                 "mb-1 font-code text-[8px] tracking-wider",
-                success ? "text-[#45b78a]" : "text-[#ef6a6a]"
+                success ? "text-(--ts-allow)" : "text-(--ts-deny)"
               )}
             >
               {success ? "TOOL RESULT" : "TOOL DENIED"}
             </div>
-            <div className="text-[11px] text-[#e7e6e1]">
+            <div className="text-[11px] text-(--ts-text)">
               {resultVisible ? scenario.agent.result : "Awaiting supervisor…"}
             </div>
-            <code className="mt-1 block text-[9px] text-[#777c77]">
+            <code className="mt-1 block text-[9px] text-(--ts-muted)">
               {resultVisible ? scenario.agent.resultMeta : "policy evaluation pending"}
             </code>
           </div>
@@ -127,17 +127,17 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
 
       <TraceArrow active={step.phase === "REQUEST"} />
 
-      <div className="border border-white/10 bg-[#0e1111] p-4">
-        <div className="mb-3 font-code text-[9px] tracking-[0.16em] text-[#8b8f8a]">
+      <div className="border border-(--ts-line) bg-(--ts-panel) p-4">
+        <div className="mb-3 font-code text-[9px] tracking-[0.16em] text-(--ts-muted)">
           NONO · POLICY + CAPABILITY BROKER
         </div>
         {resolved && (
-          <code className="mb-3 block break-all border border-white/[0.08] bg-black/20 p-2 text-[9px] leading-relaxed text-[#c8c8c2]">
-            <span className="text-[#e8734a]">exec </span>
+          <code className="mb-3 block break-all border border-(--ts-line) bg-(--ts-inset) p-2 text-[9px] leading-relaxed text-(--ts-text-soft)">
+            <span className="text-(--ts-accent)">exec </span>
             {scenario.command}
           </code>
         )}
-        <div className="grid gap-px bg-white/[0.08]">
+        <div className="grid gap-px bg-(--ts-line)">
           {[
             ["01", "EXECUTABLE", resolved ? "gh · digest verified" : "identity + digest"],
             [
@@ -161,16 +161,16 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
               <div
                 key={index}
                 className={cn(
-                  "flex items-center gap-3 bg-[#101313] px-3 py-2.5",
-                  active && "border-l-2 border-[#e8734a] bg-[#e8734a]/[0.06]"
+                  "flex items-center gap-3 bg-(--ts-panel) px-3 py-2.5",
+                  active && "border-l-2 border-(--ts-accent) bg-(--ts-active)"
                 )}
               >
-                <span className="font-code text-[8px] text-[#555a55]">{index}</span>
+                <span className="font-code text-[8px] text-(--ts-faint)">{index}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="font-code text-[8px] tracking-wider text-[#d4d4ce]">
+                  <div className="font-code text-[8px] tracking-wider text-(--ts-text-soft)">
                     {title}
                   </div>
-                  <code className="block truncate text-[9px] text-[#707570]">{value}</code>
+                  <code className="block truncate text-[9px] text-(--ts-muted)">{value}</code>
                 </div>
                 {i === 1 && argvBadge && <Verdict value={argvBadge.verdict} />}
               </div>
@@ -183,47 +183,47 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
         className={cn(
           "relative ml-10 mt-3 border px-3 py-3 transition-colors",
           humanApproved
-            ? "border-[#45b78a]/70 bg-[#45b78a]/[0.05]"
+            ? "border-(--ts-allow)/70 bg-(--ts-allow)/5"
             : humanPending
-              ? "border-[#e2b46f]/90 bg-[#e2b46f]/[0.06]"
+              ? "border-(--ts-warn)/90 bg-(--ts-warn-surface)"
               : humanScenario
-                ? "border-[#e2b46f]/45 bg-[#11120f]"
-                : "border-white/10 bg-[#101313] opacity-55"
+                ? "border-(--ts-warn)/45 bg-(--ts-panel)"
+                : "border-(--ts-line) bg-(--ts-panel) opacity-55"
         )}
       >
         {humanScenario && (
           <div
             className={cn(
               "absolute top-5 -left-10 w-10 border-t border-dashed",
-              humanReached ? "border-[#e2b46f]/80" : "border-[#e2b46f]/40"
+              humanReached ? "border-(--ts-warn)/80" : "border-(--ts-warn)/40"
             )}
           />
         )}
         <div
           className={cn(
             "font-code text-[7px] tracking-[0.14em]",
-            humanScenario ? "text-[#d7a968]" : "text-[#666b66]"
+            humanScenario ? "text-(--ts-warn)" : "text-(--ts-faint)"
           )}
         >
           OUTSIDE PROVIDED POLICY
         </div>
         <div className="mt-1 flex items-center justify-between gap-3">
-          <span className="text-[10px] font-semibold tracking-wide text-[#e8e7e2]">
+          <span className="text-[10px] font-semibold tracking-wide text-(--ts-text)">
             Human approval
           </span>
           {humanApproved ? (
-            <span className="border border-[#45b78a]/60 px-1.5 py-0.5 font-code text-[8px] tracking-wider text-[#45b78a]">
+            <span className="border border-(--ts-allow)/60 px-1.5 py-0.5 font-code text-[8px] tracking-wider text-(--ts-allow)">
               APPROVED
             </span>
           ) : humanPending ? (
-            <span className="ts-status-pulse border border-[#e2b46f]/60 px-1.5 py-0.5 font-code text-[8px] tracking-wider text-[#e2b46f]">
+            <span className="ts-status-pulse border border-(--ts-warn)/60 px-1.5 py-0.5 font-code text-[8px] tracking-wider text-(--ts-warn)">
               PENDING
             </span>
           ) : (
-            <code className="text-[8px] text-[#92958f]">approve · deny</code>
+            <code className="text-[8px] text-(--ts-muted)">approve · deny</code>
           )}
         </div>
-        <div className="mt-1 font-code text-[7px] tracking-wider text-[#565b56]">
+        <div className="mt-1 font-code text-[7px] tracking-wider text-(--ts-faint)">
           HUMAN-IN-THE-LOOP
         </div>
       </div>
@@ -234,27 +234,27 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
         className={cn(
           "ts-mobile-chamber relative min-h-64 p-5 transition-all",
           spawned
-            ? "border border-[#e8734a]/70 bg-[#e8734a]/[0.035] opacity-100"
-            : "border border-white/[0.08] bg-white/[0.015] opacity-35"
+            ? "border border-(--ts-accent)/70 bg-(--ts-chamber) opacity-100"
+            : "border border-(--ts-line) bg-(--ts-surface-faint) opacity-35"
         )}
       >
         <div className="mb-5 flex items-center justify-between">
-          <span className="font-code text-[9px] tracking-[0.15em] text-[#e8734a]">
+          <span className="font-code text-[9px] tracking-[0.15em] text-(--ts-accent)">
             NONO MICRO SANDBOX
           </span>
-          <span className="font-code text-[8px] text-[#666b66]">INVOCATION-SCOPED</span>
+          <span className="font-code text-[8px] text-(--ts-faint)">INVOCATION-SCOPED</span>
         </div>
 
         {spawned ? (
           <>
-            <div className="ts-mobile-tool-core mx-auto flex h-24 max-w-48 flex-col items-center justify-center border border-[#e8734a]/70 bg-[#111414]">
-              <span className="font-code text-[8px] tracking-wider text-[#666b66]">
+            <div className="ts-mobile-tool-core mx-auto flex h-24 max-w-48 flex-col items-center justify-center border border-(--ts-accent)/70 bg-(--ts-panel-strong)">
+              <span className="font-code text-[8px] tracking-wider text-(--ts-faint)">
                 PROCESS MODULE
               </span>
-              <div className="my-1 font-code text-xl text-[#f3f2ed]">
-                <span className="text-[#e8734a]">&gt;_</span> gh
+              <div className="my-1 font-code text-xl text-(--ts-text)">
+                <span className="text-(--ts-accent)">&gt;_</span> gh
               </div>
-              <code className="text-[9px] text-[#777c77]">PID 48291 · {procLabel}</code>
+              <code className="text-[9px] text-(--ts-muted)">PID 48291 · {procLabel}</code>
             </div>
 
             {capabilityReached && (
@@ -265,14 +265,14 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
                   ["STDIO", "1 MB · BOUNDED"],
                   ["NETWORK", "PROXY ONLY"],
                 ].map(([label, value]) => (
-                  <div key={label} className="border border-white/[0.08] bg-black/20 p-2">
-                    <div className="font-code text-[7px] tracking-wider text-[#555a55]">
+                  <div key={label} className="border border-(--ts-line) bg-(--ts-inset) p-2">
+                    <div className="font-code text-[7px] tracking-wider text-(--ts-faint)">
                       {label}
                     </div>
                     <code
                       className={cn(
                         "mt-1 block text-[8px]",
-                        value === "DENIED" ? "text-[#ef6a6a]" : "text-[#d1d1cb]"
+                        value === "DENIED" ? "text-(--ts-deny)" : "text-(--ts-text-soft)"
                       )}
                     >
                       {value}
@@ -283,13 +283,13 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
             )}
 
             {credentialReached && (
-              <div className="mt-3 border border-[#e8734a]/50 bg-[#e8734a]/[0.07] px-3 py-2 text-center">
-                <code className="text-[9px] text-[#eaa080]">{PHANTOM_TOKEN}</code>
+              <div className="mt-3 border border-(--ts-accent)/50 bg-(--ts-active) px-3 py-2 text-center">
+                <code className="text-[9px] text-(--ts-accent)">{PHANTOM_TOKEN}</code>
               </div>
             )}
           </>
         ) : (
-          <div className="flex min-h-40 items-center justify-center text-center font-code text-[9px] text-[#555a55]">
+          <div className="flex min-h-40 items-center justify-center text-center font-code text-[9px] text-(--ts-faint)">
             {argvBadge?.verdict === "DENY"
               ? "NO SANDBOX CREATED · BLOCKED AT ARGV"
               : "AWAITING SYSCALL"}
@@ -303,36 +303,36 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
         className={cn(
           "ts-mobile-gate border p-4",
           proxyBadge?.verdict === "DENY"
-            ? "border-[#ef6a6a]/50 bg-[#ef6a6a]/[0.04]"
+            ? "border-(--ts-deny)/50 bg-(--ts-deny)/5"
             : step.phase === "EXECUTE"
-              ? "border-[#e8734a]/50 bg-[#e8734a]/[0.035]"
-              : "border-white/[0.08] bg-white/[0.015]"
+              ? "border-(--ts-accent)/50 bg-(--ts-chamber)"
+              : "border-(--ts-line) bg-(--ts-surface-faint)"
         )}
       >
         <div className="flex items-center justify-between">
           <div>
-            <div className="font-code text-[9px] tracking-[0.15em] text-[#d4d4ce]">
+            <div className="font-code text-[9px] tracking-[0.15em] text-(--ts-text-soft)">
               L7 PROXY
             </div>
-            <div className="mt-1 font-code text-[8px] text-[#666b66]">
+            <div className="mt-1 font-code text-[8px] text-(--ts-faint)">
               INSPECT
             </div>
           </div>
           {proxyBadge && <Verdict value={proxyBadge.verdict} />}
         </div>
         {proxyBadge && (
-          <code className="mt-3 block break-all text-[9px] text-[#a7aaa4]">
+          <code className="mt-3 block break-all text-[9px] text-(--ts-muted)">
             {proxyBadge.rule.replace(" → ALLOW", "").replace(" → DENY", "")}
           </code>
         )}
         <div className="mt-4 flex items-center gap-2">
-          <span className="font-code text-[7px] text-[#666b66]">IN</span>
-          <div className="h-px flex-1 bg-[#e8734a]/60" />
-          <div className="flex size-8 items-center justify-center rounded-full border border-white/15 font-code text-[10px] text-[#e8734a]">
+          <span className="font-code text-[7px] text-(--ts-faint)">IN</span>
+          <div className="h-px flex-1 bg-(--ts-accent)/60" />
+          <div className="flex size-8 items-center justify-center rounded-full border border-(--ts-line-strong) font-code text-[10px] text-(--ts-accent)">
             ⇄
           </div>
-          <div className="h-px flex-1 bg-white/10" />
-          <span className="font-code text-[7px] text-[#666b66]">OUT</span>
+          <div className="h-px flex-1 bg-(--ts-line)" />
+          <span className="font-code text-[7px] text-(--ts-faint)">OUT</span>
           <svg
             viewBox="0 0 48 48"
             className={cn(
@@ -341,23 +341,23 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
             )}
             aria-hidden="true"
           >
-            <circle cx="24" cy="24" r="21" fill="none" stroke="rgba(255,255,255,.18)" />
-            <ellipse cx="24" cy="24" rx="9" ry="21" fill="none" stroke="rgba(255,255,255,.14)" />
+            <circle cx="24" cy="24" r="21" fill="none" stroke="var(--ts-line-strong)" />
+            <ellipse cx="24" cy="24" rx="9" ry="21" fill="none" stroke="var(--ts-line)" />
             <path
               d="M4 17 Q24 24 44 17 M4 31 Q24 24 44 31 M3 24 H45"
               fill="none"
-              stroke="rgba(255,255,255,.14)"
+              stroke="var(--ts-line)"
             />
             <path
               d="M16 10 L22 8 L27 12 L33 11 L37 16 L33 21 L25 21 L21 26 L15 22 L12 16 Z"
-              fill={proxyBadge?.verdict === "ALLOW" ? "#e8734a" : "rgba(255,255,255,.15)"}
+              fill={proxyBadge?.verdict === "ALLOW" ? "var(--ts-accent)" : "var(--ts-line-strong)"}
               opacity=".7"
             />
             <circle
               cx="36"
               cy="14"
               r="2.5"
-              fill={proxyBadge?.verdict === "ALLOW" ? "#e8734a" : "#666b66"}
+              fill={proxyBadge?.verdict === "ALLOW" ? "var(--ts-accent)" : "var(--ts-faint)"}
             />
           </svg>
         </div>
@@ -365,8 +365,8 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
             className={cn(
               "mt-2 text-right font-code text-[7px] tracking-wider",
               proxyBadge?.verdict === "DENY"
-                ? "text-[#444844]"
-                : "text-[#777c77]"
+                ? "text-(--ts-faint)/70"
+                : "text-(--ts-muted)"
             )}
           >
             INTERNET · API.GITHUB.COM
@@ -375,19 +375,19 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
 
       <TraceArrow active={step.phase === "AUDIT"} />
 
-      <div className="border-t border-white/10 pt-4">
+      <div className="border-t border-(--ts-line) pt-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="font-code text-[9px] font-medium tracking-[0.15em] text-[#d0d1cb]">
+            <div className="font-code text-[9px] font-medium tracking-[0.15em] text-(--ts-text-soft)">
               TAMPER-EVIDENT AUDIT
             </div>
-            <code className="mt-2 block text-[10px] font-medium text-[#c3c5bf]">
+            <code className="mt-2 block text-[10px] font-medium text-(--ts-text-soft)">
               resolve → argv → spawn → l7 → seal
             </code>
           </div>
           <div className={cn("text-right", !sealed && "opacity-35")}>
-            <div className="font-code text-[8px] text-[#e8734a]">MERKLE ROOT</div>
-            <code className="mt-1 block text-[9px] text-[#929690]">9a3b7c1d…6082</code>
+            <div className="font-code text-[8px] text-(--ts-accent)">MERKLE ROOT</div>
+            <code className="mt-1 block text-[9px] text-(--ts-muted)">9a3b7c1d…6082</code>
           </div>
         </div>
       </div>
