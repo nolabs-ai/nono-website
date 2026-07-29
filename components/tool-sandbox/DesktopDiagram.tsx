@@ -17,6 +17,8 @@ const PATHS: Record<PathId, string> = {
   "agent-supervisor": "M 300 294 H 350",
   spawn: "M 520 294 H 720",
   "phantom-cred": "M 520 382 H 786",
+  escalate: "M 520 226 H 538 V 188 H 556",
+  "approval-return": "M 634 236 V 294",
   egress: "M 1046 294 H 1076",
   "proxy-github": "M 1184 294 H 1244",
   "audit-drop-argv": "M 438 270 V 520",
@@ -147,10 +149,12 @@ function AgentSurface({
   scenario,
   active,
   resultVisible,
+  success,
 }: {
   scenario: Scenario;
   active: boolean;
   resultVisible: boolean;
+  success: boolean;
 }) {
   return (
     <g>
@@ -239,11 +243,9 @@ function AgentSurface({
           x={44}
           y={378}
           className="ts-svg-micro"
-          fill={
-            scenario.id === "allowed" ? "var(--ts-allow)" : "var(--ts-deny)"
-          }
+          fill={success ? "var(--ts-allow)" : "var(--ts-deny)"}
         >
-          {scenario.id === "allowed" ? "TOOL RESULT" : "TOOL DENIED"}
+          {success ? "TOOL RESULT" : "TOOL DENIED"}
         </text>
         <text x={44} y={399} className="ts-svg-body" fill="var(--ts-text)">
           {resultVisible ? scenario.agent.result : "Awaiting supervisor…"}
@@ -343,9 +345,15 @@ export default function DesktopDiagram({
   const sealed = reached.some((item) => item.active.includes("merkle"));
   const sealing = animate && active("merkle");
   const denied = argvBadge?.verdict === "DENY" || proxyBadge?.verdict === "DENY";
-  const resultVisible = scenario.id === "allowed" ? outputReached : denied;
+  const humanScenario = scenario.id === "human-approved";
+  const humanReached = reached.some((item) => item.active.includes("human"));
+  const humanApproved = reached.some((item) => item.id === "approved");
+  const humanPending = humanReached && !humanApproved;
+  const success = scenario.id === "allowed" || scenario.id === "human-approved";
+  const resultVisible = success ? outputReached : denied;
 
   const sandboxPresent = ["materializing", "active", "collapsing"].includes(step.sandbox);
+  const spawnReached = reached.some((item) => item.sandbox === "materializing");
   const materializing = animate && step.sandbox === "materializing";
   const collapsing = animate && step.sandbox === "collapsing";
 
@@ -353,9 +361,11 @@ export default function DesktopDiagram({
     scenario.command.length > 71
       ? `${scenario.command.slice(0, 68)}…`
       : scenario.command;
+  const procLabel = scenario.command.replace(/^gh\s+/, "").split(" ").slice(0, 3).join(" ");
 
   const gateValue = (id: StageId) => {
     if (id === "resolver" && resolveReached) return "gh · digest verified";
+    if (id === "argv" && humanReached) return "no rule matched → escalate";
     if (id === "argv" && argvBadge) return argvBadge.rule.replace(" → ALLOW", "").replace(" → DENY", "");
     if (id === "capability" && sandboxPresent) return "read-only · proxy-only";
     if (id === "credential" && credentialReached) return "real token remains here";
@@ -369,7 +379,8 @@ export default function DesktopDiagram({
       label: `argv.${argvBadge.verdict.toLowerCase()}`,
       tone: argvBadge.verdict === "ALLOW" ? "allow" : "deny",
     });
-  if (sandboxPresent) events.push({ label: "spawn" });
+  if (humanApproved) events.push({ label: "human.approve", tone: "allow" });
+  if (spawnReached) events.push({ label: "spawn" });
   if (credentialReached) events.push({ label: "credential" });
   if (proxyBadge)
     events.push({
@@ -397,6 +408,7 @@ export default function DesktopDiagram({
         scenario={scenario}
         active={active("agent") || active("argv")}
         resultVisible={resultVisible}
+        success={success}
       />
 
       {/* The agent's intent becomes a concrete executable invocation here. */}
@@ -427,46 +439,129 @@ export default function DesktopDiagram({
         </g>
       ))}
 
-      {/* A genuine external breakout: unmatched policy decisions leave the
-          main path for a separately bounded human approval service. */}
-      <g>
+      {/* A genuine external breakout, off to the side of the main corridor:
+          invocations with no matching rule leave the argv gate for a human
+          decision, then rejoin the scoped execution path below. */}
+      <g className="ts-node-transition" opacity={humanScenario ? 1 : 0.55}>
+        {humanScenario && (
+          <>
+            <path
+              d={PATHS.escalate}
+              fill="none"
+              stroke={humanReached ? "rgba(226,180,111,.85)" : "rgba(226,180,111,.45)"}
+              className="ts-node-transition"
+            />
+            <path
+              d="M 549 183 L 554 188 L 549 193"
+              fill="none"
+              stroke={humanReached ? "rgba(226,180,111,.85)" : "rgba(226,180,111,.5)"}
+              className="ts-node-transition"
+            />
+          </>
+        )}
         <path
-          d="M 520 243 H 540"
+          d={cutRect(556, 140, 156, 96, 11)}
+          fill={humanReached ? "rgba(226,180,111,.06)" : "var(--ts-panel)"}
+          stroke={
+            humanApproved
+              ? "var(--ts-allow)"
+              : humanPending
+                ? "rgba(226,180,111,.95)"
+                : humanScenario
+                  ? "rgba(226,180,111,.65)"
+                  : "var(--ts-line-strong)"
+          }
+          className="ts-node-transition"
+        />
+        <circle
+          cx={690}
+          cy={166}
+          r={6}
           fill="none"
-          stroke="rgba(226,180,111,.7)"
+          stroke={humanScenario ? "rgba(226,180,111,.85)" : "var(--ts-line-strong)"}
+          className="ts-node-transition"
         />
         <path
-          d={cutRect(540, 190, 156, 96, 11)}
-          fill="var(--ts-panel)"
-          stroke="rgba(226,180,111,.65)"
-        />
-        <path
-          d="M 548 238 L 553 243 L 548 248"
+          d="M 680 183 Q 690 172 700 183"
           fill="none"
-          stroke="rgba(226,180,111,.85)"
+          stroke={humanScenario ? "rgba(226,180,111,.85)" : "var(--ts-line-strong)"}
+          className="ts-node-transition"
         />
-        <circle cx={675} cy={220} r={6} fill="none" stroke="rgba(226,180,111,.85)" />
-        <path d="M 665 237 Q 675 226 685 237" fill="none" stroke="rgba(226,180,111,.85)" />
-        <text x={552} y={209} className="ts-svg-micro" fill="rgba(226,180,111,.85)">
+        <text
+          x={568}
+          y={159}
+          className="ts-svg-micro ts-node-transition"
+          fill={humanScenario ? "rgba(226,180,111,.85)" : "var(--ts-faint)"}
+        >
           OUTSIDE PROVIDED POLICY
         </text>
-        <text x={552} y={231} className="ts-svg-label" fill="var(--ts-text)">
+        <text
+          x={568}
+          y={181}
+          className="ts-svg-label ts-node-transition"
+          fill={humanScenario ? "var(--ts-text)" : "var(--ts-muted)"}
+        >
           HUMAN APPROVAL
         </text>
-        <path d="M 552 243 H 684" stroke="var(--ts-line)" />
-        <text x={552} y={261} className="ts-svg-code" fill="var(--ts-muted)">
-          approve · deny
-        </text>
-        <text x={552} y={276} className="ts-svg-micro" fill="var(--ts-faint)">
-          HUMAN-IN-THE-LOOP
-        </text>
-        {/* Approval can rejoin the normal scoped execution path. */}
-        <path
-          d="M 696 243 H 708 V 294 H 720"
-          fill="none"
-          stroke="rgba(226,180,111,.45)"
-          strokeDasharray="2 4"
-        />
+        <path d="M 568 193 H 700" stroke="var(--ts-line)" />
+        {humanApproved ? (
+          <text x={568} y={211} className="ts-svg-code" fill="var(--ts-allow)">
+            decision: approve
+          </text>
+        ) : humanPending ? (
+          <text x={568} y={211} className="ts-svg-code" fill="var(--ts-text)">
+            reviewing invocation…
+          </text>
+        ) : (
+          <text x={568} y={211} className="ts-svg-code" fill="var(--ts-muted)">
+            approve · deny
+          </text>
+        )}
+        {humanApproved ? (
+          <g>
+            <path
+              d="M 568 222 l 3 3 l 5.5 -5.5"
+              fill="none"
+              stroke="var(--ts-allow)"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <text x={582} y={226} className="ts-svg-micro" fill="var(--ts-allow)">
+              APPROVED
+            </text>
+          </g>
+        ) : humanPending ? (
+          <g>
+            <circle cx={572} cy={223} r={3} fill="rgba(226,180,111,.9)" className="ts-status-pulse" />
+            <text x={582} y={226} className="ts-svg-micro" fill="rgba(226,180,111,.9)">
+              PENDING
+            </text>
+          </g>
+        ) : (
+          <text x={568} y={226} className="ts-svg-micro" fill="var(--ts-faint)">
+            HUMAN-IN-THE-LOOP
+          </text>
+        )}
+        {/* Approval rejoins the normal scoped execution path. */}
+        {humanScenario && (
+          <>
+            <path
+              d={PATHS["approval-return"]}
+              fill="none"
+              stroke={
+                humanApproved ? "rgba(226,180,111,.8)" : "rgba(226,180,111,.45)"
+              }
+              strokeDasharray="2 4"
+              className="ts-node-transition"
+            />
+            <path
+              d="M 630 287 L 634 292 L 638 287"
+              fill="none"
+              stroke={humanApproved ? "rgba(226,180,111,.8)" : "rgba(226,180,111,.5)"}
+              className="ts-node-transition"
+            />
+          </>
+        )}
       </g>
 
       {/* Real credential is visibly locked to the supervisor side. */}
@@ -628,7 +723,7 @@ export default function DesktopDiagram({
               <tspan fill="var(--ts-accent)">&gt;_</tspan> gh
             </text>
             <text x={742} y={313} textAnchor="middle" className="ts-svg-code" fill="var(--ts-muted)">
-              PID 48291 · issue view 1052
+              PID 48291 · {procLabel}
             </text>
           </g>
 
@@ -700,7 +795,7 @@ export default function DesktopDiagram({
               className="ts-svg-code"
               fill={proxyBadge.verdict === "DENY" ? "var(--ts-deny)" : "var(--ts-allow)"}
             >
-              {proxyBadge.rule.includes("/graphql") ? "POST /graphql" : "POST /…/comments"}
+              {proxyBadge.rule.replace(" → ALLOW", "").replace(" → DENY", "")}
             </text>
             <text
               x={990}

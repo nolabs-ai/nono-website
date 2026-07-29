@@ -23,6 +23,7 @@ export type StageId =
   | "argv"
   | "capability"
   | "credential"
+  | "human"
   | "proxy"
   | "sandbox"
   | "github"
@@ -33,6 +34,8 @@ export type PathId =
   | "agent-supervisor"
   | "spawn"
   | "phantom-cred"
+  | "escalate"
+  | "approval-return"
   | "egress"
   | "proxy-github"
   | "audit-drop-argv"
@@ -67,7 +70,7 @@ export interface Step {
   detail?: string;
 }
 
-export type ScenarioId = "allowed" | "argv-denied" | "l7-denied";
+export type ScenarioId = "allowed" | "human-approved" | "argv-denied" | "l7-denied";
 
 export interface Scenario {
   id: ScenarioId;
@@ -229,6 +232,167 @@ export const SCENARIOS: Scenario[] = [
         active: [],
         sandbox: "gone",
         caption: "one invocation, one sandbox — nothing persists",
+      },
+    ],
+  },
+  {
+    id: "human-approved",
+    label: "Human approval",
+    command: "gh pr merge 847 --repo nolabs-ai/nono --squash",
+    agent: {
+      user: "Merge PR #847 when checks pass.",
+      response: "Checks are green — merging PR #847.",
+      tool: "GitHub · Merge pull request",
+      toolMeta: "nolabs-ai/nono · #847",
+      result: "PR #847 merged into main",
+      resultMeta: "squash · approved by human",
+    },
+    staticStep: 8,
+    skippedPhases: [],
+    outcomeText:
+      "Human approved: gh pr merge matched no argv rule, so nono routed the exact invocation to a human for review. On approval it ran inside a fresh micro sandbox, the proxy allowed PUT to the merge endpoint, and the approval was sealed into the audit record.",
+    steps: [
+      {
+        id: "request",
+        phase: "REQUEST",
+        duration: 1200,
+        active: ["agent"],
+        pulses: [{ path: "agent-supervisor" }],
+        sandbox: "none",
+        caption: "a coding agent invokes gh",
+        detail: "caller: coding agent · tool: gh",
+      },
+      {
+        id: "resolve",
+        phase: "RESOLVE",
+        duration: 1000,
+        active: ["resolver"],
+        sandbox: "none",
+        caption: "nono resolves and verifies the gh executable",
+        detail: "exec: gh → verified",
+      },
+      {
+        id: "escalate",
+        phase: "AUTHORIZE",
+        duration: 1500,
+        active: ["argv", "human"],
+        pulses: [{ path: "escalate" }],
+        sandbox: "none",
+        caption: "no argv rule matches — the exact invocation is routed to a human",
+        detail: "argv prefix: pr merge → escalate",
+      },
+      {
+        id: "pending",
+        phase: "AUTHORIZE",
+        duration: 1700,
+        active: ["human"],
+        sandbox: "none",
+        caption: "a human reviews the exact command before anything runs",
+        detail: "approval: pending",
+      },
+      {
+        id: "approved",
+        phase: "AUTHORIZE",
+        duration: 1200,
+        active: ["human"],
+        pulses: [{ path: "approval-return" }],
+        sandbox: "none",
+        caption: "approved — execution proceeds under scoped policy",
+        detail: "decision: approve",
+      },
+      {
+        id: "spawn",
+        phase: "SPAWN",
+        duration: 1200,
+        active: ["capability", "sandbox"],
+        pulses: [{ path: "spawn" }],
+        sandbox: "materializing",
+        caption: "a fresh micro sandbox materializes around gh",
+        detail: "scope: this invocation only",
+      },
+      {
+        id: "capabilities",
+        phase: "SPAWN",
+        duration: 1200,
+        active: ["sandbox"],
+        sandbox: "active",
+        caption: "the sandbox receives only its selected capabilities",
+        detail: "workspace: read-only · net: via nono proxy",
+      },
+      {
+        id: "credential",
+        phase: "SPAWN",
+        duration: 1200,
+        active: ["credential", "sandbox"],
+        pulses: [{ path: "phantom-cred" }],
+        sandbox: "active",
+        caption: "a phantom token is injected — the real token never enters the child",
+        detail: PHANTOM_TOKEN,
+      },
+      {
+        id: "egress",
+        phase: "EXECUTE",
+        duration: 1400,
+        active: ["sandbox", "proxy"],
+        pulses: [{ path: "egress" }],
+        badge: { stage: "proxy", verdict: "ALLOW", rule: "PUT /…/merge → ALLOW" },
+        sandbox: "active",
+        caption: "the proxy validates the phantom token and evaluates L7 policy",
+        detail: "PUT /repos/nolabs-ai/nono/pulls/847/merge → ALLOW",
+      },
+      {
+        id: "github",
+        phase: "EXECUTE",
+        duration: 1100,
+        active: ["proxy", "github"],
+        pulses: [{ path: "proxy-github" }],
+        sandbox: "active",
+        caption: "real credential injected at the boundary, forwarded over TLS",
+        detail: "→ api.github.com",
+      },
+      {
+        id: "output",
+        phase: "EXECUTE",
+        duration: 1200,
+        active: ["sandbox", "agent"],
+        pulses: [
+          { path: "proxy-github", reverse: true, durMs: 420 },
+          { path: "spawn", reverse: true, durMs: 320, delayMs: 430 },
+          { path: "agent-supervisor", reverse: true, durMs: 320, delayMs: 770 },
+        ],
+        sandbox: "active",
+        caption: "bounded stdout returns to the coding agent via the supervisor",
+      },
+      {
+        id: "seal",
+        phase: "AUDIT",
+        duration: 1400,
+        active: ["audit", "merkle"],
+        pulses: [
+          { path: "audit-drop-argv", durMs: 500 },
+          { path: "audit-drop-proxy", durMs: 500 },
+          { path: "audit-drop-sandbox", durMs: 500 },
+          { path: "audit-lane", durMs: 700, delayMs: 500 },
+        ],
+        sandbox: "active",
+        caption: "the human decision is sealed into the hash-chained audit record",
+        detail: "SHA-256 Merkle root",
+      },
+      {
+        id: "destroy",
+        phase: "DESTROY",
+        duration: 1100,
+        active: [],
+        sandbox: "collapsing",
+        caption: "invocation exits — the micro sandbox is destroyed",
+      },
+      {
+        id: "hold",
+        phase: "DESTROY",
+        duration: 3000,
+        active: [],
+        sandbox: "gone",
+        caption: "approved by a human, executed in isolation — nothing persists",
       },
     ],
   },

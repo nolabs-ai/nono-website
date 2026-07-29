@@ -12,7 +12,7 @@ import {
 } from "@/components/tool-sandbox/scenarios";
 import { cn } from "@/lib/utils";
 
-const ORDER: ScenarioId[] = ["allowed", "argv-denied", "l7-denied"];
+const ORDER: ScenarioId[] = ["allowed", "human-approved", "argv-denied", "l7-denied"];
 
 interface MachineState {
   scenarioId: ScenarioId;
@@ -188,9 +188,11 @@ export default function ToolSandboxArchitecture() {
             engine can route it to a human approval decision to approve, deny, or time
             out. Security-relevant events are hash-chained into an audit record sealed
             with a SHA-256 Merkle root, and the sandbox is destroyed when the invocation
-            exits. Three scenarios: Allowed read — gh issue view runs,
+            exits. Four scenarios: Allowed read — gh issue view runs,
             POST /graphql is allowed by the proxy, and output returns to the coding agent.
-            Argv denied — gh issue comment is refused at argv authorization; no sandbox
+            Human approval — gh pr merge matches no argv rule, so the exact invocation
+            pauses for a human decision and, once approved, executes inside a scoped
+            sandbox. Argv denied — gh issue comment is refused at argv authorization; no sandbox
             or outbound request is ever created. L7 denied — gh api passes the broad
             argv rule, but the POST to the repository comments endpoint is denied at
             the proxy; nothing reaches GitHub.

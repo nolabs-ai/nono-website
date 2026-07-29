@@ -56,7 +56,13 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
   const outputReached = reached.some((item) => item.id === "output");
   const sealed = reached.some((item) => item.active.includes("merkle"));
   const denied = argvBadge?.verdict === "DENY" || proxyBadge?.verdict === "DENY";
-  const resultVisible = scenario.id === "allowed" ? outputReached : denied;
+  const humanScenario = scenario.id === "human-approved";
+  const humanReached = reached.some((item) => item.active.includes("human"));
+  const humanApproved = reached.some((item) => item.id === "approved");
+  const humanPending = humanReached && !humanApproved;
+  const success = scenario.id === "allowed" || scenario.id === "human-approved";
+  const resultVisible = success ? outputReached : denied;
+  const procLabel = scenario.command.replace(/^gh\s+/, "").split(" ").slice(0, 3).join(" ");
 
   return (
     <div className="mx-auto max-w-md">
@@ -104,10 +110,10 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
             <div
               className={cn(
                 "mb-1 font-code text-[8px] tracking-wider",
-                scenario.id === "allowed" ? "text-[#45b78a]" : "text-[#ef6a6a]"
+                success ? "text-[#45b78a]" : "text-[#ef6a6a]"
               )}
             >
-              {scenario.id === "allowed" ? "TOOL RESULT" : "TOOL DENIED"}
+              {success ? "TOOL RESULT" : "TOOL DENIED"}
             </div>
             <div className="text-[11px] text-[#e7e6e1]">
               {resultVisible ? scenario.agent.result : "Awaiting supervisor…"}
@@ -137,9 +143,11 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
             [
               "02",
               "ARGV POLICY",
-              argvBadge
-                ? argvBadge.rule.replace(" → ALLOW", "").replace(" → DENY", "")
-                : "caller + arguments",
+              humanReached
+                ? "no rule matched → escalate"
+                : argvBadge
+                  ? argvBadge.rule.replace(" → ALLOW", "").replace(" → DENY", "")
+                  : "caller + arguments",
             ],
             ["03", "CAPABILITIES", spawned ? "read-only · proxy-only" : "minimal grants"],
             ["04", "CREDENTIAL", credentialReached ? "real token remains here" : "supervisor vault"],
@@ -171,16 +179,49 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
         </div>
       </div>
 
-      <div className="relative ml-10 mt-3 border border-[#e2b46f]/45 bg-[#11120f] px-3 py-3">
-        <div className="absolute top-5 -left-10 w-10 border-t border-dashed border-[#e2b46f]/40" />
-        <div className="font-code text-[7px] tracking-[0.14em] text-[#d7a968]">
+      <div
+        className={cn(
+          "relative ml-10 mt-3 border px-3 py-3 transition-colors",
+          humanApproved
+            ? "border-[#45b78a]/70 bg-[#45b78a]/[0.05]"
+            : humanPending
+              ? "border-[#e2b46f]/90 bg-[#e2b46f]/[0.06]"
+              : humanScenario
+                ? "border-[#e2b46f]/45 bg-[#11120f]"
+                : "border-white/10 bg-[#101313] opacity-55"
+        )}
+      >
+        {humanScenario && (
+          <div
+            className={cn(
+              "absolute top-5 -left-10 w-10 border-t border-dashed",
+              humanReached ? "border-[#e2b46f]/80" : "border-[#e2b46f]/40"
+            )}
+          />
+        )}
+        <div
+          className={cn(
+            "font-code text-[7px] tracking-[0.14em]",
+            humanScenario ? "text-[#d7a968]" : "text-[#666b66]"
+          )}
+        >
           OUTSIDE PROVIDED POLICY
         </div>
         <div className="mt-1 flex items-center justify-between gap-3">
           <span className="text-[10px] font-semibold tracking-wide text-[#e8e7e2]">
             Human approval
           </span>
-          <code className="text-[8px] text-[#92958f]">approve · deny</code>
+          {humanApproved ? (
+            <span className="border border-[#45b78a]/60 px-1.5 py-0.5 font-code text-[8px] tracking-wider text-[#45b78a]">
+              APPROVED
+            </span>
+          ) : humanPending ? (
+            <span className="ts-status-pulse border border-[#e2b46f]/60 px-1.5 py-0.5 font-code text-[8px] tracking-wider text-[#e2b46f]">
+              PENDING
+            </span>
+          ) : (
+            <code className="text-[8px] text-[#92958f]">approve · deny</code>
+          )}
         </div>
         <div className="mt-1 font-code text-[7px] tracking-wider text-[#565b56]">
           HUMAN-IN-THE-LOOP
@@ -213,7 +254,7 @@ export default function MobileFlow({ scenario, stepIndex }: MobileFlowProps) {
               <div className="my-1 font-code text-xl text-[#f3f2ed]">
                 <span className="text-[#e8734a]">&gt;_</span> gh
               </div>
-              <code className="text-[9px] text-[#777c77]">PID 48291 · issue 1052</code>
+              <code className="text-[9px] text-[#777c77]">PID 48291 · {procLabel}</code>
             </div>
 
             {capabilityReached && (
