@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
+import ToolSandboxArchitecture from "@/components/ToolSandboxArchitecture";
 import GetStarted from "@/components/GetStarted";
 import SupportedAgents from "@/components/SupportedAgents";
 import ScaleBand from "@/components/ScaleBand";
@@ -17,7 +18,7 @@ export default function Home() {
       <main>
         <Hero />
         <GetStarted />
-        <div className="h-px bg-border" />
+        <ToolSandboxArchitecture />
         <SupportedAgents />
         <div className="h-px bg-border" />
         <ScaleBand />

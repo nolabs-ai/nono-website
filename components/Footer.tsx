@@ -136,11 +136,18 @@ export default function Footer() {
               className="text-foreground opacity-50 hover:opacity-100 transition-opacity"
             >
               <Image
-                src="/nolabs-logo.svg"
+                src="/nolabs-logo-light-bg.svg"
                 alt="nolabs"
                 width={125}
                 height={40}
-                className="h-8 w-auto"
+                className="nolabs-logo-light-bg h-8 w-auto"
+              />
+              <Image
+                src="/nolabs-logo-dark-bg.svg"
+                alt="nolabs"
+                width={125}
+                height={40}
+                className="nolabs-logo-dark-bg h-8 w-auto"
               />
             </a>
           </div>

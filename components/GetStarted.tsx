@@ -65,7 +65,7 @@ function Step({
 
 export default function GetStarted() {
   return (
-    <section id="get-started" className="pb-20 px-6">
+    <section id="get-started" className="px-6 pt-16 pb-20 md:pt-20">
       <div className="mx-auto grid max-w-5xl items-stretch gap-5 md:grid-cols-2">
         {/* Install */}
         <div className="flex flex-col rounded-xl border border-white/10 bg-[#0a0a0a] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] sm:p-6">
@@ -114,30 +114,41 @@ export default function GetStarted() {
         </div>
       </div>
 
-      {/* Sigstore trust line */}
-      <div className="mx-auto mt-8 flex max-w-5xl flex-col items-center gap-1 text-center text-sm text-muted">
-        <div className="flex items-center gap-2">
-          <span>Created by the team behind</span>
-          <a
-            href="https://sigstore.dev"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 font-medium text-foreground transition-colors hover:text-muted-strong"
-          >
-            <Image
-              src="/sigstore.svg"
-              alt="Sigstore"
-              width={18}
-              height={18}
-              style={{ width: "auto", height: "18px" }}
-            />
-            Sigstore
-          </a>
+      {/* Sigstore provenance card */}
+      <div className="mx-auto mt-8 flex max-w-2xl flex-col items-center gap-4 rounded-lg border border-border bg-surface px-5 py-4 text-center shadow-[0_10px_30px_rgba(0,0,0,0.04)] sm:flex-row sm:text-left">
+        <a
+          href="https://sigstore.dev"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Visit Sigstore"
+          className="flex size-11 shrink-0 items-center justify-center rounded-md border border-border bg-background transition-colors hover:border-border-strong"
+        >
+          <Image
+            src="/sigstore.svg"
+            alt=""
+            width={24}
+            height={24}
+            style={{ width: "auto", height: "24px" }}
+          />
+        </a>
+        <span aria-hidden="true" className="hidden h-10 w-px bg-accent/40 sm:block" />
+        <div className="min-w-0">
+          <div className="text-sm text-muted">
+            Created by the team behind{" "}
+            <a
+              href="https://sigstore.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-foreground transition-colors hover:text-accent"
+            >
+              Sigstore
+            </a>
+          </div>
+          <p className="mt-1 text-xs leading-relaxed text-muted">
+            The industry standard for software signing, used by PyPI, Homebrew,
+            Maven, Google, GitHub, and NVIDIA.
+          </p>
         </div>
-        <span className="text-xs text-muted">
-          The industry standard for software signing, used by PyPi, Homebrew,
-          Maven and Google, GitHub, NVIDIA
-        </span>
       </div>
     </section>
   );

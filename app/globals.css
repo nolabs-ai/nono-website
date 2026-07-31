@@ -33,6 +33,9 @@
   --btn-primary-bg: #e8734a;
   --btn-primary-text: #ffffff;
   --btn-primary-hover: #d4623b;
+
+  --allow: #047857;
+  --deny: #b91c1c;
 }
 
 [data-theme="dark"] {
@@ -67,6 +70,21 @@
   --btn-primary-bg: #e8734a;
   --btn-primary-text: #ffffff;
   --btn-primary-hover: #f0845e;
+
+  --allow: #34d399;
+  --deny: #f87171;
+}
+
+.nolabs-logo-dark-bg {
+  display: none;
+}
+
+[data-theme="dark"] .nolabs-logo-light-bg {
+  display: none;
+}
+
+[data-theme="dark"] .nolabs-logo-dark-bg {
+  display: block;
 }
 
 @theme inline {
@@ -90,6 +108,8 @@
   --color-terminal-bg: var(--terminal-bg);
   --color-terminal-text: var(--terminal-text);
   --color-terminal-border: var(--terminal-border);
+  --color-allow: var(--allow);
+  --color-deny: var(--deny);
   /* Inter is the primary UI typeface. `font-mono` is intentionally mapped to
      Inter too, so the many existing `font-mono` UI usages render in Inter
      without touching every file. Real code stays monospace via the
@@ -148,6 +168,249 @@ html {
 }
 .animate-flow-line {
   animation: flow-dash 1.5s linear infinite;
+}
+
+/* Tool sandbox architecture (components/ToolSandboxArchitecture.tsx).
+   The stage carries its own palette so the diagram reads as one schematic;
+   light values are the default, dark overrides follow the site's
+   [data-theme] switch. */
+
+.ts-stage {
+  --ts-bg: #f3f2ee;
+  --ts-panel: #faf9f6;
+  --ts-panel-strong: #ffffff;
+  --ts-chamber: rgba(207, 91, 50, 0.035);
+  --ts-active: rgba(207, 91, 50, 0.08);
+  --ts-result: rgba(28, 29, 27, 0.035);
+  --ts-grid: rgba(28, 29, 27, 0.14);
+  --ts-line: rgba(28, 29, 27, 0.13);
+  --ts-line-strong: rgba(28, 29, 27, 0.3);
+  --ts-text: #22231f;
+  --ts-text-soft: #4b4e48;
+  --ts-muted: #5f645e;
+  --ts-faint: #8f948d;
+  --ts-accent: #cf5b32;
+  --ts-allow: #177a55;
+  --ts-deny: #c03a3a;
+  --ts-warn: #a3742f;
+  --ts-warn-dim: rgba(163, 116, 47, 0.5);
+  --ts-warn-surface: rgba(163, 116, 47, 0.08);
+  --ts-ghost: rgba(28, 29, 27, 0.015);
+  --ts-inset: rgba(28, 29, 27, 0.045);
+  --ts-surface: rgba(28, 29, 27, 0.04);
+  --ts-surface-faint: rgba(28, 29, 27, 0.02);
+  --ts-shadow: 0 30px 90px rgba(28, 29, 27, 0.12);
+  --ts-grid-line: rgba(28, 29, 27, 0.025);
+  --ts-glow: rgba(207, 91, 50, 0.055);
+  --ts-glow-top: rgba(255, 255, 255, 0.5);
+  --ts-glow-bottom: rgba(28, 29, 27, 0.045);
+  background:
+    linear-gradient(var(--ts-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ts-grid-line) 1px, transparent 1px),
+    var(--ts-bg);
+  background-size: 48px 48px;
+}
+
+[data-theme="dark"] .ts-stage {
+  --ts-bg: #090b0b;
+  --ts-panel: #101313;
+  --ts-panel-strong: #151919;
+  --ts-chamber: rgba(232, 115, 74, 0.025);
+  --ts-active: rgba(232, 115, 74, 0.075);
+  --ts-result: rgba(255, 255, 255, 0.028);
+  --ts-grid: rgba(255, 255, 255, 0.055);
+  --ts-line: rgba(224, 226, 218, 0.1);
+  --ts-line-strong: rgba(224, 226, 218, 0.22);
+  --ts-text: #efeee9;
+  --ts-text-soft: #d2d3cd;
+  --ts-muted: #8b908a;
+  --ts-faint: #565c57;
+  --ts-accent: #e8734a;
+  --ts-allow: #45b78a;
+  --ts-deny: #ef6a6a;
+  --ts-warn: #e2b46f;
+  --ts-warn-dim: rgba(226, 180, 111, 0.45);
+  --ts-warn-surface: rgba(226, 180, 111, 0.06);
+  --ts-ghost: rgba(255, 255, 255, 0.012);
+  --ts-inset: rgba(0, 0, 0, 0.2);
+  --ts-surface: rgba(255, 255, 255, 0.035);
+  --ts-surface-faint: rgba(255, 255, 255, 0.015);
+  --ts-shadow: 0 30px 90px rgba(0, 0, 0, 0.32);
+  --ts-grid-line: rgba(255, 255, 255, 0.018);
+  --ts-glow: rgba(232, 115, 74, 0.075);
+  --ts-glow-top: rgba(255, 255, 255, 0.018);
+  --ts-glow-bottom: rgba(0, 0, 0, 0.2);
+}
+
+.ts-stage-glow {
+  background:
+    radial-gradient(circle at 50% 48%, var(--ts-glow), transparent 34%),
+    linear-gradient(180deg, var(--ts-glow-top), transparent 24%, transparent 76%, var(--ts-glow-bottom));
+}
+
+.ts-svg-label,
+.ts-svg-body {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+.ts-svg-label {
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+}
+
+.ts-svg-body {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.ts-svg-code,
+.ts-svg-micro,
+.ts-svg-tool,
+.ts-svg-tool-small {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.ts-svg-code {
+  font-size: 9px;
+}
+
+.ts-svg-audit {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+}
+
+.ts-svg-micro {
+  font-size: 7.5px;
+  letter-spacing: 0.08em;
+}
+
+.ts-svg-tool {
+  font-size: 27px;
+  font-weight: 650;
+  letter-spacing: -0.06em;
+}
+
+.ts-svg-tool-small {
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+}
+
+.ts-mobile-panel {
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+}
+
+.ts-mobile-chamber {
+  clip-path: polygon(16px 0, calc(100% - 28px) 0, 100% 28px, 100% calc(100% - 18px), calc(100% - 18px) 100%, 18px 100%, 0 calc(100% - 18px), 0 16px);
+}
+
+.ts-mobile-tool-core {
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
+}
+
+.ts-mobile-gate {
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px), 0 14px);
+}
+
+@keyframes pulse-travel {
+  from { stroke-dashoffset: 14; }
+  to { stroke-dashoffset: -102; }
+}
+.animate-pulse-travel {
+  animation: pulse-travel var(--pulse-duration, 1000ms) ease-in-out forwards;
+}
+
+@keyframes pulse-travel-reverse {
+  from { stroke-dashoffset: -102; }
+  to { stroke-dashoffset: 14; }
+}
+.animate-pulse-travel-reverse {
+  animation: pulse-travel-reverse var(--pulse-duration, 1000ms) ease-in-out forwards;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+.animate-fade-in {
+  animation: fade-in 400ms ease both;
+}
+
+@keyframes collapse-out {
+  to { opacity: 0; transform: scale(0.98); }
+}
+.animate-collapse-out {
+  animation: collapse-out 700ms ease forwards;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.animate-corner-draw {
+  animation: draw-line 600ms ease forwards;
+}
+
+@keyframes sandbox-draw {
+  0% { stroke-dashoffset: 100; fill-opacity: 0; }
+  70% { stroke-dashoffset: 0; fill-opacity: 0; }
+  100% { stroke-dashoffset: 0; fill-opacity: 1; }
+}
+.animate-sandbox-draw {
+  animation: sandbox-draw 850ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes tool-core-in {
+  from { opacity: 0; transform: scale(0.82); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-tool-core-in {
+  animation: tool-core-in 520ms cubic-bezier(0.22, 1, 0.36, 1) 260ms both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes sandbox-scan {
+  0% { transform: translateY(0); opacity: 0; }
+  15% { opacity: 0.55; }
+  85% { opacity: 0.2; }
+  100% { transform: translateY(218px); opacity: 0; }
+}
+.ts-sandbox-scan {
+  stroke: var(--ts-accent);
+  stroke-width: 1;
+  filter: drop-shadow(0 0 4px rgba(232, 115, 74, 0.55));
+  animation: sandbox-scan 2.4s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+.ts-status-pulse {
+  animation: status-pulse 1.1s ease-in-out infinite;
+}
+
+.ts-node-transition {
+  transition: stroke 200ms ease, fill 200ms ease, fill-opacity 200ms ease, opacity 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-travel,
+  .animate-pulse-travel-reverse,
+  .animate-fade-in,
+  .animate-collapse-out,
+  .animate-corner-draw,
+  .animate-sandbox-draw,
+  .animate-tool-core-in,
+  .ts-sandbox-scan,
+  .ts-status-pulse {
+    animation: none !important;
+  }
+  .ts-node-transition {
+    transition: none !important;
+  }
 }
 
 
