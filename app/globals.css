@@ -75,6 +75,18 @@
   --deny: #f87171;
 }
 
+.nolabs-logo-dark-bg {
+  display: none;
+}
+
+[data-theme="dark"] .nolabs-logo-light-bg {
+  display: none;
+}
+
+[data-theme="dark"] .nolabs-logo-dark-bg {
+  display: block;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-background-secondary: var(--background-secondary);
