@@ -1,43 +1,6 @@
 @import "tailwindcss";
 
 :root,
-[data-theme="light"] {
-  --background: #f9f9f7;
-  --background-secondary: #fafafa;
-  --surface: rgba(0, 0, 0, 0.02);
-  --surface-hover: rgba(0, 0, 0, 0.04);
-
-  --foreground: #1a1a1a;
-  --muted: #888888;
-  --muted-strong: #555555;
-
-  --accent: #e8734a;
-  --accent-hover: #d4623b;
-  --accent-blue: #e8734a;
-  --accent-teal: #e8734a;
-  --accent-glow: rgba(232, 115, 74, 0.08);
-
-  --border: rgba(0, 0, 0, 0.1);
-  --border-strong: rgba(0, 0, 0, 0.2);
-
-  --code-bg: #f0f0ee;
-  --code-text: #1a1a1a;
-  --code-border: rgba(0, 0, 0, 0.1);
-
-  --terminal-bg: #f0f0ee;
-  --terminal-text: #1a1a1a;
-  --terminal-border: rgba(0, 0, 0, 0.15);
-
-  --selection-bg: rgba(232, 115, 74, 0.2);
-  --selection-color: #1a1a1a;
-  --btn-primary-bg: #e8734a;
-  --btn-primary-text: #ffffff;
-  --btn-primary-hover: #d4623b;
-
-  --allow: #047857;
-  --deny: #b91c1c;
-}
-
 [data-theme="dark"] {
   --background: #111110;
   --background-secondary: #191918;
@@ -75,15 +38,52 @@
   --deny: #f87171;
 }
 
-.nolabs-logo-dark-bg {
+[data-theme="light"] {
+  --background: #f9f9f7;
+  --background-secondary: #fafafa;
+  --surface: rgba(0, 0, 0, 0.02);
+  --surface-hover: rgba(0, 0, 0, 0.04);
+
+  --foreground: #1a1a1a;
+  --muted: #888888;
+  --muted-strong: #555555;
+
+  --accent: #e8734a;
+  --accent-hover: #d4623b;
+  --accent-blue: #e8734a;
+  --accent-teal: #e8734a;
+  --accent-glow: rgba(232, 115, 74, 0.08);
+
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.2);
+
+  --code-bg: #f0f0ee;
+  --code-text: #1a1a1a;
+  --code-border: rgba(0, 0, 0, 0.1);
+
+  --terminal-bg: #f0f0ee;
+  --terminal-text: #1a1a1a;
+  --terminal-border: rgba(0, 0, 0, 0.15);
+
+  --selection-bg: rgba(232, 115, 74, 0.2);
+  --selection-color: #1a1a1a;
+  --btn-primary-bg: #e8734a;
+  --btn-primary-text: #ffffff;
+  --btn-primary-hover: #d4623b;
+
+  --allow: #047857;
+  --deny: #b91c1c;
+}
+
+.nolabs-logo-light-bg {
   display: none;
 }
 
-[data-theme="dark"] .nolabs-logo-light-bg {
+[data-theme="light"] .nolabs-logo-dark-bg {
   display: none;
 }
 
-[data-theme="dark"] .nolabs-logo-dark-bg {
+[data-theme="light"] .nolabs-logo-light-bg {
   display: block;
 }
 
@@ -172,46 +172,10 @@ html {
 
 /* Tool sandbox architecture (components/ToolSandboxArchitecture.tsx).
    The stage carries its own palette so the diagram reads as one schematic;
-   light values are the default, dark overrides follow the site's
+   dark values are the default, light overrides follow the site's
    [data-theme] switch. */
 
 .ts-stage {
-  --ts-bg: #f3f2ee;
-  --ts-panel: #faf9f6;
-  --ts-panel-strong: #ffffff;
-  --ts-chamber: rgba(207, 91, 50, 0.035);
-  --ts-active: rgba(207, 91, 50, 0.08);
-  --ts-result: rgba(28, 29, 27, 0.035);
-  --ts-grid: rgba(28, 29, 27, 0.14);
-  --ts-line: rgba(28, 29, 27, 0.13);
-  --ts-line-strong: rgba(28, 29, 27, 0.3);
-  --ts-text: #22231f;
-  --ts-text-soft: #4b4e48;
-  --ts-muted: #5f645e;
-  --ts-faint: #8f948d;
-  --ts-accent: #cf5b32;
-  --ts-allow: #177a55;
-  --ts-deny: #c03a3a;
-  --ts-warn: #a3742f;
-  --ts-warn-dim: rgba(163, 116, 47, 0.5);
-  --ts-warn-surface: rgba(163, 116, 47, 0.08);
-  --ts-ghost: rgba(28, 29, 27, 0.015);
-  --ts-inset: rgba(28, 29, 27, 0.045);
-  --ts-surface: rgba(28, 29, 27, 0.04);
-  --ts-surface-faint: rgba(28, 29, 27, 0.02);
-  --ts-shadow: 0 30px 90px rgba(28, 29, 27, 0.12);
-  --ts-grid-line: rgba(28, 29, 27, 0.025);
-  --ts-glow: rgba(207, 91, 50, 0.055);
-  --ts-glow-top: rgba(255, 255, 255, 0.5);
-  --ts-glow-bottom: rgba(28, 29, 27, 0.045);
-  background:
-    linear-gradient(var(--ts-grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--ts-grid-line) 1px, transparent 1px),
-    var(--ts-bg);
-  background-size: 48px 48px;
-}
-
-[data-theme="dark"] .ts-stage {
   --ts-bg: #090b0b;
   --ts-panel: #101313;
   --ts-panel-strong: #151919;
@@ -240,6 +204,42 @@ html {
   --ts-glow: rgba(232, 115, 74, 0.075);
   --ts-glow-top: rgba(255, 255, 255, 0.018);
   --ts-glow-bottom: rgba(0, 0, 0, 0.2);
+  background:
+    linear-gradient(var(--ts-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ts-grid-line) 1px, transparent 1px),
+    var(--ts-bg);
+  background-size: 48px 48px;
+}
+
+[data-theme="light"] .ts-stage {
+  --ts-bg: #f3f2ee;
+  --ts-panel: #faf9f6;
+  --ts-panel-strong: #ffffff;
+  --ts-chamber: rgba(207, 91, 50, 0.035);
+  --ts-active: rgba(207, 91, 50, 0.08);
+  --ts-result: rgba(28, 29, 27, 0.035);
+  --ts-grid: rgba(28, 29, 27, 0.14);
+  --ts-line: rgba(28, 29, 27, 0.13);
+  --ts-line-strong: rgba(28, 29, 27, 0.3);
+  --ts-text: #22231f;
+  --ts-text-soft: #4b4e48;
+  --ts-muted: #5f645e;
+  --ts-faint: #8f948d;
+  --ts-accent: #cf5b32;
+  --ts-allow: #177a55;
+  --ts-deny: #c03a3a;
+  --ts-warn: #a3742f;
+  --ts-warn-dim: rgba(163, 116, 47, 0.5);
+  --ts-warn-surface: rgba(163, 116, 47, 0.08);
+  --ts-ghost: rgba(28, 29, 27, 0.015);
+  --ts-inset: rgba(28, 29, 27, 0.045);
+  --ts-surface: rgba(28, 29, 27, 0.04);
+  --ts-surface-faint: rgba(28, 29, 27, 0.02);
+  --ts-shadow: 0 30px 90px rgba(28, 29, 27, 0.12);
+  --ts-grid-line: rgba(28, 29, 27, 0.025);
+  --ts-glow: rgba(207, 91, 50, 0.055);
+  --ts-glow-top: rgba(255, 255, 255, 0.5);
+  --ts-glow-bottom: rgba(28, 29, 27, 0.045);
 }
 
 .ts-stage-glow {
