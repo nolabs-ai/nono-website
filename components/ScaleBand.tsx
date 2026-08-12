@@ -43,8 +43,7 @@ export default function ScaleBand() {
           At scale
         </span>
         <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-4 max-w-3xl mx-auto leading-snug">
-          Engineers at some of the world&rsquo;s largest tech companies run nono
-          in production.
+          Engineers at some of the world&rsquo;s largest tech companies run nono to protect their agents.
         </h2>
         <p className="text-muted text-sm md:text-base leading-relaxed max-w-2xl mx-auto">
           It scales from a single laptop to fleets of agents without changing the
