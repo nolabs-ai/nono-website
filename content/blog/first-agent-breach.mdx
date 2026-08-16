@@ -1,0 +1,92 @@
+---
+title: "The first big agent breach will not be a jailbreak"
+seoTitle: "Egress control for AI agents: deny by default, deny-domain, and audited denials"
+date: "2026-07-23"
+description: "An agent with legitimate data access and unconstrained egress is a breach waiting for instructions. How nono closes the exit."
+excerpt: "The first headline agent breach will not come from a model saying something it should not. It will come from an agent with legitimate data access and one open connection to the wrong host. How nono closes the exit: deny by default at the kernel, an explicit deny list above the allowlist, and every denied probe landing in the audit log."
+author: "Sal Kimmich"
+authorRole: "Solutions Architect"
+tags: ["AI agents", "security", "network filtering", "nono", "open source"]
+---
+The first headline agent breach will not come from a model saying something it should not. It will come from an agent doing exactly what it was built to do, for the wrong party.
+
+Here is the shape of it. An agent has database read access because its job requires database read access. A prompt injection arrives through any surface the agent ingests: a document, a support ticket, a web page, a tool result. The injected instruction does not need to escalate privileges. It does not need to escape a sandbox. It needs one thing: somewhere to send the data. If the agent can open a connection to an arbitrary host, the breach is over before anyone knows it started.
+
+That is the threat model egress control answers. Not "stop the injection." Injections will land: every serious deployment should assume so. The controllable variable is what a compromised agent can reach.
+
+## Closed by default, at the kernel
+
+When network restriction is on, the sandboxed process gets one TCP destination: the proxy port on localhost. Every other outbound TCP connection is blocked at the kernel level, below the agent, below its runtime, below anything an injected instruction can talk to. Traffic that wants out goes through the proxy, and the proxy checks policy.
+
+```bash
+nono run --allow-cwd \
+  --allow-domain api.anthropic.com \
+  -- my-agent
+```
+
+One flag, and the agent's world shrinks to one API. Everything else fails at connect time.
+
+Two details in that path matter more than they look. The proxy resolves DNS itself and checks every resolved IP before connecting, which closes DNS rebinding: a malicious resolver cannot map an allowed hostname onto an internal address. And each session mints a 256-bit proxy token the child must present on every request, so another process on the same machine cannot borrow the agent's tunnel.
+
+## Deny beats allow, by design
+
+Allowlists drift. Workloads grow, someone adds a domain, then another. nono adds the invariant that survives the drift:
+
+```bash
+nono run --allow-cwd \
+  --allow-domain api.anthropic.com \
+  --deny-domain '*.paste-sites.example' \
+  --deny-domain internal-billing.corp.example \
+  -- my-agent
+```
+
+`--deny-domain` is evaluated before the allowlist and supports wildcards. Your agent may eventually need a dozen new endpoints. It will never need the one you denied, and no future allowlist edit can quietly reopen it.
+
+Filtering also goes deeper than domains. Allow rules take path patterns, so "the agent can reach GitHub" becomes "the agent can reach these orgs on GitHub":
+
+```bash
+--allow-domain 'https://github.com/my-org/**'
+```
+
+## Policy that survives real work
+
+Test harnesses and dev servers use port spans, not single ports. Profiles express that directly:
+
+```json
+{
+  "network": {
+    "open_port_range": [[3000, 3999]],
+    "deny_domain": ["*.paste-sites.example"]
+  }
+}
+```
+
+This matters more than it looks. A policy that fights the workload gets replaced by `--allow-net`, and then there is no policy. Usable policy is enforced policy. The same principle runs through the config model: contradictory network flags are a startup error, not a silent runtime resolution. Ambiguity never defaults to open.
+
+## Every denial is evidence
+
+A denied request does not vanish. It returns 403 and writes an audit entry. Read that from the defender's side: a compromised agent probing for an exit shows up in the log before any data moves. Most exfiltration is invisible until the data is gone. Here, the attempt is the alarm.
+
+And the agent can interrogate its own cage. Inside the sandbox:
+
+```bash
+nono why --self --host https://github.com/some/path
+```
+
+answers whether a URL is reachable and which rule decides it. Debugging policy is a query, not an archaeology dig through denial logs.
+
+## What this does not do
+
+Honesty about the boundary, in three parts.
+
+In domain-filtering mode, TLS runs end to end: the proxy validates the hostname and relays bytes, and never sees plaintext. That is a privacy property and a limitation in one: nono is filtering where traffic goes, not inspecting what it says.
+
+The kernel primitives have documented edges, and ours are written down rather than glossed. On Linux, Landlock's network control covers TCP bind and connect. UDP is outside its scope, which is why nono's own documentation states plainly that DNS resolution over UDP is not blocked by Landlock. If your threat model includes tunneling out over UDP, that boundary wants another control, and you should learn that here rather than during an incident.
+
+And nono does not prevent prompt injection. It bounds what an injected agent can reach, and records what it tried. Narrower claims, checkable ones: the enforcement path is Apache-2.0, and you can run the probe yourself.
+
+**Three takeaways.** The exfiltration channel, not the injection, is the controllable variable. Deny-by-default at the kernel, explicit deny above the allowlist, fail-closed configuration: all shipped in nono today. Denials are audit events, so the probe is visible before the breach.
+
+---
+
+*This post is part of a series on agent infrastructure that assumes compromise. The thesis, and where it leads: [Assume the agent is compromised. Now what?](https://nolabs.ai/blog/assume-the-agent-is-compromised)*
