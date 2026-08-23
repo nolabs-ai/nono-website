@@ -12,6 +12,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { DOCS_URL, REGISTRY_URL } from "@/lib/site";
+import { TextScramble } from "@/components/hero/TextScramble";
 
 /* -------------------------------------------------------------------------- */
 /* Install tabs                                                               */
@@ -392,9 +393,13 @@ export default function RedditLanding() {
       <div className="mx-auto w-full max-w-2xl">
         {/* hero */}
         <div className="mb-14 text-center">
-          <h1 className="font-code text-4xl font-bold tracking-tighter text-white sm:text-5xl">
-            nono
-          </h1>
+          <h1 className="sr-only">nono — sandbox any AI coding agent</h1>
+          <div
+            aria-hidden="true"
+            className="font-code text-6xl font-bold leading-none tracking-tighter text-white sm:text-7xl"
+          >
+            <TextScramble text="nono" delay={200} scrambleDuration={1000} glitch />
+          </div>
           <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-white/55">
             Run any AI coding agent inside a kernel-enforced sandbox. Three
             steps: install, find an agent, run it. Zero setup, zero latency.
