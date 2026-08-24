@@ -1,0 +1,60 @@
+---
+title: "AWS has no seam. That's good."
+seoTitle: "AWS SigV4 credential brokering for AI agents: structural non-possession"
+date: "2026-08-04"
+description: "SigV4 signs the request itself, so there is no header to inject. Brokering it means the proxy signs per invocation, and the agent holds nothing."
+excerpt: "Bearer tokens have a seam: a string you can bolt on at a proxy. AWS SigV4 does not. Brokering it means holding the signing material and constructing the signature per invocation, with the agent holding nothing. The strongest proof yet that structural non-possession survives the hardest mainstream auth scheme."
+author: "Sal Kimmich"
+authorRole: "Solutions Architect"
+tags: ["AI agents", "security", "AWS", "credential injection", "nono", "open source"]
+---
+Injecting a bearer token at a proxy is easy. The agent sends a plain request, the broker adds an Authorization header, the upstream sees a credentialed call. The agent never touches the secret. This is the phantom token pattern, and it works because bearer auth has a seam: the credential is a string bolted onto the request.
+
+AWS has no seam. Signature Version 4 signs the request itself: method, path, query, headers, a hash of the body, folded into a canonical form and signed with a key derived from the secret through a chain of HMAC operations. Change one byte and the signature dies. There is no header to inject, because the credential is a function of the entire request.
+
+Which means a broker that wants to stand between an agent and AWS cannot cheat. It has to hold the signing material, canonicalize the request the agent actually made, derive the signing key, and sign. Per invocation. That shipped in nono, and it is the strongest evidence so far that structural credential non-possession is not a trick that only works on easy auth schemes.
+
+## Why an agent is talking SigV4 at all
+
+Here is the part that makes this urgent rather than academic: for a growing number of agents, the model itself is behind SigV4. Amazon Bedrock authenticates with request signing. An agent whose inference runs on Bedrock is signing on its hottest path, every single call. Give that agent real IAM credentials and you have handed your most injection-exposed process the keys to your cloud. This is not an edge case. It is the default shape of an AWS-native agent deployment.
+
+## The route is one block of JSON
+
+```json
+{
+  "meta": { "name": "bedrock-agent" },
+  "network": {
+    "credentials": ["bedrock"],
+    "custom_credentials": {
+      "bedrock": {
+        "upstream": "https://bedrock-runtime.us-east-1.amazonaws.com",
+        "aws_auth": {}
+      }
+    }
+  }
+}
+```
+
+An empty `aws_auth: {}` is usually enough: the proxy resolves credentials through the standard AWS chain and infers signing region and service from the upstream host. Explicit `profile`, `region`, and `service` overrides exist for the cases where inference cannot work.
+
+What happens at runtime: the proxy strips whatever authentication the agent sent, resolves real credentials host-side, in the supervisor, before the sandbox is even applied, and re-signs each outbound request. SSO profiles work as-is: `aws sso login`, reference the profile, done. The agent-side SDK still initializes, still makes calls, still gets responses. It just never holds anything an attacker can take.
+
+The completing move is denying the AWS environment variables inside the sandbox and handing the SDK placeholders, so nothing in the agent's world can sign anything itself. Full compromise of the agent then yields the ability to make requests through policy, and nothing else. Requests are visible, rate-limitable, auditable, revocable. Stolen keys are none of those things.
+
+## Beyond Bedrock
+
+SigV4 or SigV4-derived signing authenticates a large surface: S3 requests, RDS IAM authentication tokens, EKS and ECR auth flows, MSK IAM auth, API Gateway authorization. The mechanics vary by service; the dependence on signing material the agent must not hold does not. If non-possession only worked for bearer tokens, agents would still need real IAM credentials for half the cloud. They do not.
+
+The honest boundary: per-invocation signing bounds credential exposure. It does not make a fully compromised broker safe. The broker is in your trusted computing base, which is exactly why its own supply chain, signed builds, provenance attestation, a public codebase, is a security property of your deployment rather than vendor housekeeping. That is its own post.
+
+## Where this came from
+
+On May 11, someone walked into the nono Discord with a question worth building on: AWS signs requests, so interception without re-signing breaks them. How does the broker pattern survive that? They filed the tracking issue the same evening, references included. Eight weeks later the feature shipped.
+
+Asked in public, designed in public, shipped in public. That is the development model working as designed, and it is open to you: the hard question you bring is the feature someone else needs.
+
+**Three takeaways.** Non-possession is structural: it survives auth schemes with no injectable seam. The broker signs per invocation, so compromise yields requests, not keys. And if your agent's model runs on Bedrock, its hottest path is already a signing path: broker it.
+
+---
+
+*This post is part of a series on agent infrastructure that assumes compromise. The thesis, and where it leads: [Assume the agent is compromised. Now what?](https://nolabs.ai/blog/assume-the-agent-is-compromised)*
