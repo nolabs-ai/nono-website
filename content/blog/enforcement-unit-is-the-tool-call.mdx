@@ -1,0 +1,96 @@
+---
+title: "The enforcement unit is the tool call"
+seoTitle: "Session sandbox vs per-invocation tool broker: how nono builds a fresh sandbox per tool call"
+date: "2026-08-27"
+description: "nono runs two sandboxes at different scales. The per-tool sandbox is not a narrowed copy of the session one: it is built from an empty capability set, per tool call."
+excerpt: "Most readers assume the per-tool sandbox is a smaller box inside the agent's box. It is not derived from it at all. Here is what each layer is built from, the four places they touch, and the limit that follows from the answer."
+author: "Sal Kimmich"
+authorRole: "Solutions Architect"
+tags: ["landlock", "seccomp", "seatbelt", "sandboxing", "ai agents", "mcp", "capability broker", "nono", "open source"]
+---
+
+Run an AI coding agent under nono and it gets a kernel-enforced sandbox: the files and network you listed in a profile, which is a JSON policy file, and nothing else. That is the session sandbox, and it is applied once, to the agent.
+
+Agents delegate, though. They shell out to `git`, `npm`, `curl`, `kubectl`, package managers, whatever else is on `PATH`. Left alone, every one of those runs with the agent's access, which means your policy is only ever as tight as the loosest thing the agent might call. So nono can also intercept those calls and hand each tool its own sandbox, decided per call. The docs call it Sandboxed Tool Execution. This post is about how that second layer relates to the first, because almost everyone gets it backwards, including me until I went and read it.
+
+Here is how most people find out. You add a command policy for `git`. Three lines, nothing exotic. Then `git status` stops working inside the sandbox, and the error names a file you never restricted.
+
+The instinct is to go looking for what got taken away. Nothing got taken away. The brokered `git` never had it.
+
+Everything below is against [v0.74.0](https://github.com/nolabs-ai/nono/tree/v0.74.0). nono is alpha; the file paths are there so you can check rather than take my word for it.
+
+## One line explains it
+
+Most people picture the second sandbox as a narrower copy of the first: the agent gets a box, each tool gets a smaller box inside it.
+
+Here is the first line of `build_child_caps`, the function that decides what a brokered tool can touch ([`platform/linux.rs:3489`](https://github.com/nolabs-ai/nono/blob/v0.74.0/crates/nono-cli/src/tool-sandbox/platform/linux.rs#L3489)):
+
+```rust
+let mut caps = CapabilitySet::new().block_network();
+```
+
+Empty. Not the agent's capabilities minus something. Empty, with network off, and then whatever the command policy declares gets added back.
+
+So the box-inside-a-box model is wrong, and it is wrong in the direction that makes your `git` failure unreadable. The two sandboxes come from different parts of the profile. The session comes from `filesystem`, `network`, and groups. The tool comes from `command_policies.commands.<name>.sandbox`. Neither is computed from the other.
+
+Which is why `git` broke. Between that empty set and your policy, nono adds a runtime baseline: the binary's shared-library closure plus a small set of system files. That is all of it. Not your gitconfig, not your repo, not your home directory. Your policy had to say so, and it did not.
+
+This is also why `@git:config-files` exists as a dynamic token in the first place. If a brokered `git` inherited the agent's reach, nobody would need a dedicated token to hand it the config files git already reads.
+
+## How it gets there
+
+The mechanism is worth following, because the reason the child starts empty is structural rather than a policy choice.
+
+On `nono run`, the profile resolves to a capability set and nono forks. The parent stays unsandboxed and becomes the supervisor. The child sandboxes itself and execs the agent ([`exec_strategy.rs:194`](https://github.com/nolabs-ai/nono/blob/v0.74.0/crates/nono-cli/src/exec_strategy.rs#L194)). That split is not optional under brokering: nono refuses to start without it ([`execution_runtime.rs:366`](https://github.com/nolabs-ai/nono/blob/v0.74.0/crates/nono-cli/src/execution_runtime.rs#L366)).
+
+The agent's sandbox is one Landlock layer covering filesystem and network, plus a second execute-only gate when brokering is on. Layers stack and never loosen: each `restrict_self()` is immutable, and the effective permission is the intersection with everything before it ([`sandbox/linux.rs:1350`](https://github.com/nolabs-ai/nono/blob/v0.74.0/crates/nono/src/sandbox/linux.rs#L1350)). `security.capability_elevation` is the one thing that looks like an exception and is not: with it on, the supervisor can serve a path outside the initial set, but it opens the file in its own context and injects the descriptor into the child's syscall return. Nothing is added to the ruleset.
+
+The agent, then, is sealed. The supervisor is not. Everything below follows from that.
+
+Brokering itself turns on from one line, a non-empty `commands` map ([`command_policy.rs:268`](https://github.com/nolabs-ai/nono/blob/v0.74.0/crates/nono-cli/src/command_policy.rs#L268)). A profile without one has a single sandbox and no broker at all. With it on, a call goes like this:
+
+1. The agent execs `git`. PATH resolves to a private shim: a copy of the nono binary in a sealed directory.
+2. The shim connects to the supervisor over a unix socket.
+3. The supervisor walks process ancestry back to the session to resolve the caller, selects the policy edge for that specific caller, and builds a capability set for this one invocation.
+4. The supervisor writes a launch spec and spawns nono again as a launcher.
+5. The launcher sandboxes itself, stacks an execute-only layer confining exec to the resolved binary and its dependency closure, and `execveat`s the target.
+
+The launcher is a child of the supervisor, and the supervisor was never sandboxed. So the tool's Landlock domain is fresh. There is nothing above it to inherit from. At the kernel level the two sandboxes are unrelated, which is why the empty capability set is the only honest place to start.
+
+## The five places they touch
+
+- **cwd admission.** A brokered command's live working directory must be under the session workdir or inside the agent's read grants, and not under a deny path. Otherwise the call is rejected with an error ([`tool-sandbox/mod.rs:106`](https://github.com/nolabs-ai/nono/blob/v0.74.0/crates/nono-cli/src/tool-sandbox/mod.rs#L106)).
+- **cwd-relative write downgrade.** A write grant resolving under that live cwd drops to read when the agent itself cannot write the resolved path.
+- **Writable executables.** A command target that is writable through the session's capability set is rejected, so a profile cannot both trust a binary and let the agent replace it.
+- **Interpreted scripts.** When the resolved binary is an interpreter and an argument is a shebang script, the child is granted the outer read capability covering that script, so its dependency tree resolves. That grant is bounded by the session's own capabilities ([`platform/linux.rs:3663`](https://github.com/nolabs-ai/nono/blob/v0.74.0/crates/nono-cli/src/tool-sandbox/platform/linux.rs#L3663)), and the covering grant is computed before the file is opened, so the unsandboxed supervisor never reads a path the agent could not reach on the strength of argv alone.
+- **Shim plumbing.** The session gains read on the shims and connect on the broker socket, plus the execute gate over PATH.
+
+Everything else is independent.
+
+## The honest limit
+
+Now the part that will surprise you. Read grants are not bounded by the session sandbox at all. `fs_read` entries are resolved and added with no check against the agent's capabilities ([`platform/linux.rs:3744`](https://github.com/nolabs-ai/nono/blob/v0.74.0/crates/nono-cli/src/tool-sandbox/platform/linux.rs#L3744)). The same holds for write grants that resolve outside the live cwd, including `$WORKDIR`-anchored and absolute paths. The downgrade logic says so in a comment: grants outside the cwd are unaffected.
+
+A command policy can therefore hand a tool read access the agent does not have, and the agent is the thing that invokes the tool. Grant `jq` read on a directory the session denies, and an agent that can call `jq` can get that directory's contents back on stdout.
+
+That is a design position, not an oversight. The command policy is where authority is declared, and the declaration is not capped by what the agent holds. A bank teller's authority is not bounded by yours: you cannot walk into the vault, the teller can, and will, if you hand over the right slip. A command policy is the slip.
+
+Read it that way when you write one. A grant in `command_policies` is authority you are giving the agent, one step removed, through a binary you chose and arguments you can filter. Do not read the session sandbox as a ceiling above it. It is not one.
+
+One part of this is silent. The cwd-relative write downgrade emits no warning and no error, and there is no audit decision for it: the brokered vocabulary records invocation outcomes, not capability construction. [The audit trail](/blog/secure-agent-audit) is written from outside the sandbox and is hash-chained, so what it does record survives the process it records. This is not in it. If you declared write and got read, the failure shows up inside the tool, not in the policy layer.
+
+## Inheritance only widens
+
+There is a third direction people get backwards. When profiles compose through `extends`, command grants union. `fs_read`, `fs_write`, `can_use`, and `allow_domain` are dedup-appended; booleans are OR'd ([`command_policy.rs:822`](https://github.com/nolabs-ai/nono/blob/v0.74.0/crates/nono-cli/src/command_policy.rs#L822)). A derived profile cannot remove an inherited grant, and an inherited `invocation_policy` deny is retained rather than replaced.
+
+A shared base profile is a floor you cannot lower. If you need something tighter, narrow it at the base or extend a base that never had it.
+
+## Why the tool call is the unit
+
+Session-scoped sandboxing gives a process one static capability envelope for its lifetime. That envelope has to be the union of everything the agent might legitimately need, because it is decided before anyone knows what will be asked for. Per-invocation brokering decides at each call instead: this caller, this binary, these arguments, this working directory, this capability set, discarded when the process exits.
+
+The same argument runs one layer down. A credential handed to a session is held for the session; [brokered per invocation](/blog/agent-identity-not-key), it is not held at all.
+
+The policy is rebuilt per call, from the profile, by a process the agent cannot reach. Nothing about it is negotiated at runtime, and nothing is inferred from what the agent asked for.
+
+Now the policy lives in the profile, not in the prompt. It takes less than 5 minutes to set up. 
