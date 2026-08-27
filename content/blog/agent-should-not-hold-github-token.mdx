@@ -1,0 +1,164 @@
+---
+title: "Your agent should not be holding your GitHub token"
+seoTitle: "Strip GH_TOKEN from your coding agent: environment filtering and phantom tokens in nono"
+date: "2026-09-01"
+description: "nono passes your whole environment to the sandboxed process by default, GH_TOKEN included. Here is the three-line fix, and what the tool gets handed instead."
+excerpt: "If you have GH_TOKEN exported and a coding agent running, the agent has your token. nono's session sandbox passes the environment through by default. This is the three-line fix, the phantom token the tool receives instead, and an honest account of what none of it protects you from."
+author: "Sal Kimmich"
+authorRole: "Solutions Architect"
+tags: ["AI agents", "security", "credentials", "GitHub", "nono", "open source"]
+---
+
+Run this in the shell you start your agent from:
+
+```bash
+env | grep -E '^(GH_TOKEN|GITHUB_TOKEN)=' | cut -d= -f1
+```
+
+If it printed nothing, you are ahead of most people. Stay anyway: the second half is about what to hand a tool instead of a token.
+
+If it printed something, go ask the agent. Not a jailbreak, not a clever prompt. Ask it what your GitHub token is. If it has a shell tool, it will read its own environment and tell you.
+
+That is the whole problem, in two commands. The token is not near your agent. It is inside it: in process memory, and on Linux in `/proc/<pid>/environ`, where anything else running as you can read it too. It is not scoped to the repo you have open. It does what you can do, everywhere you can do it, and it does not expire.
+
+None of that is news. This is: putting nono in front of the agent does not change it.
+
+## The default is pass-through
+
+nono's session-level `environment` block decides which variables reach the sandboxed process. With no block there is no filter, and everything in your shell goes through.
+
+That is not an obscure edge case. It is the default state of any profile that never thought about environment variables, and that includes profiles we ship. Five of the nine examples in the repo leave `environment` unset, among them all four GitHub CLI ones: the profiles whose whole purpose is keeping `gh` away from the real token. Fine for a single-command demo. Not fine the moment you paste one under an agent. The Kubernetes example in the same tree gets it right, with a `deny_vars` naming `GH_TOKEN` and `GITHUB_TOKEN`.
+
+Now the asymmetry, which is the thing to hold onto.
+
+A mediated command running through the tool sandbox gets its own environment filter, declared per command instead of per session. That distinction is the subject of [the first post in this series](/blog/enforcement-unit-is-the-tool-call), so I will not rebuild it here. Its default points the other way: with no `environment` block on the command policy, the tool sandbox falls back to a fixed allow-list of twenty-two entries. `PATH`, `HOME`, `TERM`, the locale variables, the proxy and CA-bundle variables. `GH_TOKEN` is not on it.
+
+The surface your agent runs on is open by default. The surface your tools run on is closed by default.
+
+| Surface | Config | Default with no config |
+|---|---|---|
+| Session sandbox | `environment` | pass-through |
+| Tool sandbox | `command_policies…sandbox.environment` | closed allow-list, 22 entries |
+
+Neither inherits from the other, and the tool-sandbox one has no `deny_vars` field at all. The session filter is upstream: the tool sandbox filters what the caller already has, so it can only subtract further. A brokered child cannot re-admit what the session stripped.
+
+Worth knowing before you write any command policy: setting `allow_vars` on one for any reason silently replaces the twenty-two-entry default with your list. And chained policies widen, since `allow_vars` are dedup-appended on inheritance. There is no way to tighten one downstream.
+
+## The fix
+
+Session level, three lines:
+
+```json
+{
+  "environment": {
+    "deny_vars": ["GH_TOKEN", "GITHUB_TOKEN"]
+  }
+}
+```
+
+Deny wins. A variable named in `deny_vars` is stripped even when it also matches `allow_vars`.
+
+Check your version before reaching for a wildcard. Through 0.74.0, `*` is valid only as a trailing suffix, so `GITHUB_*` works and `*_TOKEN` is rejected at profile load. On main, and so in the next release, `*` goes anywhere: `deny_vars: ["*_TOKEN", "*SECRET*"]` becomes the blunt instrument you probably wanted. Two exact names work on every version, which is why they are the fix and globs are the footnote.
+
+Because the session filter is upstream of everything else, that one block covers both surfaces for the inherited copy of the variable. Save it as `profile.json` and verify:
+
+```bash
+nono run --silent --allow-cwd --profile ./profile.json -- env \
+  | grep -E '^(GH_TOKEN|GITHUB_TOKEN)=' | cut -d= -f1
+```
+
+Empty output is the fix working.
+
+One trap if you reach for the allow-list instead: an explicitly empty `allow_vars` is not the same as an absent one. `"allow_vars": []` builds a filter matching nothing, so every inherited variable is stripped. The schema description still says empty or absent both allow everything. The code disagrees, and the code is right.
+
+Now the agent cannot read the token. It also cannot call GitHub. That is the next part.
+
+## What the tool gets instead
+
+Stripping the variable is subtraction. The move that matters is what you hand the tool instead.
+
+Declare a proxy credential and grant it to the command. Both halves are required: `command_policies` activates only when `commands` is non-empty, and a `credentials` block without one is a validation error, not an inert block.
+
+```json
+{
+  "command_policies": {
+    "credentials": {
+      "github-api": {
+        "type": "proxy",
+        "upstream": "https://api.github.com",
+        "credential_key": "env://GH_TOKEN",
+        "env_var": "GH_TOKEN",
+        "inject_header": "Authorization",
+        "credential_format": "Bearer {}"
+      }
+    },
+    "commands": {
+      "gh": {
+        "executable": "/usr/bin/gh",
+        "from": {
+          "session": {
+            "sandbox": {
+              "fs_read": ["."],
+              "fs_read_file": ["/usr/bin/gh"],
+              "credentials": [
+                {
+                  "name": "github-api",
+                  "endpoint_policy": {
+                    "default": "deny",
+                    "allow": [{ "method": "GET", "path": "/user" }]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Paths there are Linux. On macOS `gh` is usually under Homebrew, so `executable` and `fs_read_file` change.
+
+Read the two token references carefully, because they are not the same token.
+
+`credential_key` is the supervisor's copy, resolved in the parent process before the sandbox is applied. That is why `env://GH_TOKEN` still works after you deny `GH_TOKEN`: `deny_vars` filters the child's environment, not the supervisor's. The same field takes `keyring://` and `op://` references if you would rather it not be an environment variable at all.
+
+`env_var` is what the sandboxed `gh` receives. It receives a phantom: thirty-two bytes of randomness, hex-encoded, generated per proxy session. Not a GitHub credential. GitHub has never seen it and would reject it.
+
+Watch it happen. From `tool-sandbox-examples/github-cli` in a clone of the repo, export the real token the profile's `env://GH_TOKEN` source expects, then run the invocation the example ships with:
+
+```bash
+export GH_TOKEN="$(gh auth token)"
+nono run --no-audit --silent --allow-cwd \
+  --profile ./ghcli-profile-linux.json \
+  -- gh auth token
+```
+
+That prints sixty-four hex characters, and they are worthless anywhere except the local proxy.
+
+From there it is the phantom token pattern, [documented in full back in March](/blog/blog-credential-injection) down to the constant-time comparison and the zeroizing wrapper. `gh` sends a normal GitHub API request with the phantom in the `Authorization` header. The proxy validates it, strips it, checks the request against the route's endpoint policy, and injects the real credential upstream. The broker is the API principal. `gh` is a client of the broker.
+
+That March post says the agent never sees real credentials. Both it and the top of this one are true, and the distance between them is the point: the mechanism has worked since March, and it does not engage until you configure it. The [GitHub bot walkthrough](/blog/wrapping-github-bot-with-nono) from the same month grants the same credential under `network.proxy_credentials`, one route for the whole session. Here it hangs off a single command. Two profiles, five months apart, showing the difference better than a paragraph about it would.
+
+One thing not to copy from that example: it lists `GH_TOKEN` and `GITHUB_TOKEN` in the tool-sandbox `allow_vars`. Injection runs after filtering, so the phantom lands either way and the entry is redundant. If the credential route ever fails to load it is worse than redundant, because the real inherited token passes through instead.
+
+On the log, since the phantom pattern invites the question. Every mediated command produces a record with the command, caller, pid, argv hash, and decision. Every brokered request produces one with the route, method, path, upstream, status, and the rule that matched. Both go in the same append-only log under a Merkle tree, [written up properly here](/blog/secure-agent-audit), and neither holds a credential value. What the record does not carry is a key joining a tool call to the request it caused. You can line them up by timestamp and route. The log does not assert the link, and I will not describe it as though it does.
+
+## What none of this protects you from
+
+This section is the reason to trust the rest of it.
+
+**It does not stop the agent getting a token another way.** You removed one copy. If your filesystem policy lets it read `~/.config/gh/hosts.yml`, the token is there. If it can run `gh auth login`, it can get a fresh one. If it can talk to you, it can ask, and you might paste it. Treat the filesystem policy as part of the same control.
+
+**It does not replace a secrets manager.** nono decides which processes reach the token. It does not store, rotate, scope, or expire it. A classic PAT with full `repo` scope and no expiry is still exactly that, and still the blast radius if the broker falls. That gap is what [the workload identity work](/blog/agent-identity-not-key) goes after: brokering fixes possession, and the thing brokered is still static and long-lived.
+
+**It does not protect you against a compromised broker.** The supervisor holds the real credential. Control that process and you have the token. The argument is arithmetic, not magic: the secret moved out of a process that reads untrusted text all day, and the number of things trusted with it went from many to one. One is not zero.
+
+**A phantom without an endpoint policy is indirection, not restriction.** If the route allows every method on every path, a compromised agent can drive the broker into anything the real token could do. It just cannot steal the token. The endpoint policy is the actual limit, and it is `"default": "deny"` plus an explicit allow-list or it is nothing.
+
+**This is alpha software.** `SECURITY.md` says so and means it. The environment filter grammar changed while this post was being written, which is the normal condition here, not an unlucky week. Pin a version and read the profile before you run it.
+
+The three lines at the top are still worth doing today. Go do them, then decide how much of the rest you want.
+
+Profiles, endpoint policies, and the full GitHub CLI walkthrough live in [tool-sandbox-examples/github-cli](https://github.com/nolabs-ai/nono/tree/main/tool-sandbox-examples/github-cli).
