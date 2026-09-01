@@ -1,0 +1,156 @@
+---
+title: "One nono profile, thirty engineers: what a shared base guarantees"
+seoTitle: "Sharing nono profiles across a team: extends semantics, merge rules, and reviewing a profile diff"
+date: "2026-09-08"
+description: "A shared nono profile is a guarantee: every profile extending it inherits at least what it grants. Here is how inheritance resolves, and what it means for the people downstream."
+excerpt: "A base profile is the strongest guarantee you can give a team: everyone extending it inherits at least what it grants, and no one can quietly take it back. That property is worth understanding precisely before you publish one, because it runs in exactly one direction."
+author: "Sal Kimmich"
+authorRole: "Solutions Architect"
+tags: ["nono", "profiles", "configuration", "team workflows", "code review", "open source"]
+---
+
+nono runs an AI coding agent inside a kernel-enforced sandbox. What that agent can read, write, and reach comes from a profile: a JSON policy file.
+
+Picture where this usually lands. One engineer got nono working on their own machine months ago. The profile has the right paths for your monorepo, the right hosts for the internal package registry, command policies for the four tools your agents actually shell out to. It took a fortnight to get right and it works. Now there are thirty engineers, half a dozen contractors on narrower access, and a security review asking who approved what.
+
+So you do the obvious thing. Put the profile in a repo, and have everyone extend it:
+
+```json
+{ "extends": "team-base" }
+```
+
+Then the contractor request arrives. They need the agent, they should not have the deploy keys directory, and you have a base profile that grants it. You write a child profile that leaves the path out, hand it over, and the contractor still has it.
+
+Nothing went wrong. Inheritance in nono only runs one direction: it adds. A child profile can grant more than its base. It cannot grant less.
+
+That single fact is most of what you need before you hand a profile to anybody else. The [previous post](/blog/wildcards-in-nono-profiles-and-where-they-stop) covered the patterns you write inside one profile. This one is about what changes when a profile has more than one author, and what you owe the people downstream of you.
+
+## Lists grow, and that is the whole model
+
+When nono merges a base into a child, most fields fall into two buckets.
+
+**List fields combine.** Allowed paths, denied commands, groups at the profile level; `fs_read`, `allow_domain`, `exec_paths` inside a command policy. The base list and yours are joined, duplicates removed. You can always add. You cannot remove.
+
+**Single-value fields override.** `binary`, `allow_gpu`, `workdir`, everything under `security.*`. Set it and yours replaces the base. Leave it out and you inherit.
+
+So a shared base is a floor. Everything extending it gets at least what it grants, and no child takes any of it back. The contractor profile has two honest options: extend something narrower than `team-base`, or take the deploy keys out of `team-base` for all thirty engineers. There is no third option, and an afternoon spent looking for one is an afternoon wasted.
+
+Read that as a guarantee and it is the most useful thing in the system. Whoever owns `team-base` sets the minimum posture for all thirty-six people downstream, and nobody can quietly undercut it. That is what you want from a shared policy: a floor that holds without anyone policing it.
+
+It is also a real responsibility, and it usually gets assigned by accident to whoever wrote the file first. Assign it deliberately instead.
+
+## The one escape hatch
+
+There is exactly one way to subtract, and it works at group granularity rather than per entry:
+
+```json
+{ "groups": { "exclude": ["dangerous_commands"] } }
+```
+
+Worth knowing that the built-in `default` profile is merged into every profile whether or not you write `extends`. So `groups.exclude` is often the only lever you have over things you never opted into in the first place.
+
+And the escape hatch is one-way as well: exclusions are dedup-appended on inheritance like everything else, so a child adds exclusions and cannot undo one its base made. Subtraction in nono only accumulates too.
+
+## Multiple bases, and the field that changes under you
+
+`extends` takes an array:
+
+```json
+{ "extends": ["team-base", "python-tools"] }
+```
+
+Bases merge left to right, then your profile applies on top. Lists combine from all of them. For single-value fields, **the rightmost base wins**.
+
+Fine until two bases disagree, which is exactly what happens when the data team publishes `python-tools` and nobody checks it against yours. Say `team-base` sets `security.capability_elevation` to false and `python-tools` sets it to true. You get true, because it is listed second. Nothing warns you, nothing appears in the diff of either base, and the two files are individually correct. Reorder the array and your security posture changes with no other edit.
+
+Diamonds are handled: if both bases extend a common ancestor, its list entries appear once and the same rightmost rule applies to its single-value fields. Cycles are caught and reported as a circular dependency, and chains are capped at ten levels.
+
+## Fields with their own rules
+
+Five behave differently enough to be worth memorizing before you publish a base.
+
+`network.block` **ratchets**. If any base sets it true, no child can set it back to false. The merge is a boolean OR. It is the only field in the profile that is deliberately one-way, and it is the one to reach for when you want a guarantee rather than a default: set it in the base and it holds for everyone, permanently, without review.
+
+`open_urls` replaces the base entirely rather than combining.
+
+`network.credentials` combines by default. Set it to `[]` to explicitly disable everything inherited.
+
+`network.network_profile` inherits unless you set it to `null`, which clears it.
+
+`hooks`, `env_credentials`, and `environment.set_vars` merge as maps, and your key wins on a conflict.
+
+There is a sixth that matters if your base does anything with environment variables. `case_insensitive_vars` is sticky in the same way `network.block` is: once a base turns it on, a child cannot silently turn it back off. A child that could would be re-opening a bypass the base deliberately closed.
+
+## What goes in the file, and what does not
+
+A profile is safe to commit, and the reason is structural rather than a matter of discipline. Credentials in a profile are references, never values. `credential_key` and `env_credentials` take `env://`, `keyring://`, `op://`, `bw://`, `apple-password://`, and `file://` URIs. The profile says where the secret lives and which variable it lands in. It never holds the secret, so the thing in your repository is a map, not a key.
+
+That is what makes review possible at all. You can put a profile in a pull request and have someone read it without handing them anything.
+
+There is one field that breaks the property, and it is worth knowing before somebody finds it by accident. `environment.set_vars` takes literal values, injected after filtering and before credential injection. It is the one place in a profile where a person can paste a token and have it work. It will also work in the pull request, in the fork, and in every clone after that.
+
+`set_vars` supports variable expansion for exactly this reason: `$HOME`, `$WORKDIR`, `$TMPDIR`, `$XDG_*`, `$NONO_CONFIG`, `$NONO_PACKAGES`. If a value in `set_vars` is a constant rather than an expansion, that is the line to stop on in review.
+
+The other thing that does not belong is anyone's machine. Absolute paths under one person's home directory are how a shared base becomes a base only one person can use. Expansion covers most of it, and `nono profile show` on somebody else's laptop covers the rest.
+
+## Read the result, not the file
+
+Once profiles are shared, stop reading profiles. Start reading resolutions.
+
+```bash
+nono profile show my-profile
+```
+
+That prints the fully resolved profile after every merge. And when you want to know what a base is actually costing you:
+
+```bash
+nono profile diff default my-profile
+```
+
+That prints additions and removals across groups, filesystem, network, security, hooks, credentials, and the rest. That is the thing to paste into a review when someone proposes a change to a shared base. A diff of the resolved profiles says what a diff of the JSON cannot.
+
+My opinion, stated as one: a profile diff is a privilege change and should go through whatever process you already use for privilege changes. Not because nono demands it, but because the artifact is small enough that people skim it and consequential enough that they should not.
+
+It is also the answer to the security review. Nobody wants to read thirty profiles. A resolved diff against `default` is one artifact per profile, in a format a reviewer who has never used nono can follow, and it says exactly what that profile permits that the baseline does not.
+
+```bash
+nono profile validate ./profiles/team-base.json
+```
+
+Run that in CI on the base profile. A malformed pattern in a shared base is everyone's outage.
+
+## Start from something already reviewed
+
+Writing a base from scratch is where most teams stall, because the first draft is either too tight to work or too loose to be worth having. [nono-templates](https://github.com/nolabs-ai/nono-templates) exists for that: ready-made command policies for the tools an agent delegates to.
+
+Two are shipped today, both for git, and the split is the useful part. `git-local-read` lets git inspect a repository: `log`, `diff`, `status`, `blame`. `git-local-write` adds staging, committing, branching, merging, stashing. Neither has network. Neither grants a single execute path, so a `.git/hooks/pre-commit` the agent wrote is not runnable even in the tier that can write it.
+
+That naming convention is worth using whether or not you use the templates. There is no such thing as a git policy. A policy for an agent that reviews code and one for an agent that publishes are different security artifacts, and giving them different names is what makes the difference reviewable.
+
+Each template ships a `policy.json` and an `expectations.tsv`: a list of invocations and the decision each one should get.
+
+```
+command	git commit -m wip	allowed	local commit
+command	git push origin main	denied	this tier has no network
+command	git remote add evil https://x	denied	remote mutation is not in the allow list
+```
+
+Every row runs in CI on each push. That is the idea to carry into your own repo. A README claim with no matching row is a claim nobody tested, and a shared profile is exactly the kind of artifact where untested claims accumulate.
+
+Both templates set `"extends": "default"`, so they are bases you can build on rather than finished profiles.
+
+## The limits
+
+**Rightmost-wins is silent.** Two bases setting one field to different values is a real configuration error, and nono resolves it instead of reporting it. `nono profile show` after the fact is the only way to catch it. If you maintain more than one shared base, treat the order of that array as load-bearing and comment it.
+
+**You cannot narrow a base, and `groups.exclude` is not a substitute.** It operates on whole groups. If a base grants a single path you do not want, there is no per-entry removal. Your options are to change the base or not extend it.
+
+**A diff is not a review.** `nono profile diff` tells you what changed. It cannot tell you whether the change is a good idea, and a shared base is exactly where a bad idea gets the widest reach. Treat a profile diff the way you treat a dependency bump: someone who understands the blast radius reads it, and the fact that it applied cleanly is not the same as the fact that it should have.
+
+**Nothing here bounds authority granted at the tool level.** A command policy in a shared base grants capability to a brokered tool directly, and that grant is not capped by what the agent itself can reach. Inheriting a base means inheriting its command policies too.
+
+**This is not production software.** `SECURITY.md` is explicit that production use is not recommended at this stage. Profile semantics are still moving: the environment pattern grammar changed twice this summer. Pin your nono version, run `nono profile diff` after upgrades, and do not assume a base resolves the same way it did last month.
+
+If you are somewhere between the one working profile and the thirty engineers, start with the diff. Take the profile you are already passing around, run `nono profile diff default` against it, and read what comes back as a list of things every person who uses it can do.
+
+That list is your actual policy. The file is just how it got written down, and the gap between the two is usually the whole problem.
