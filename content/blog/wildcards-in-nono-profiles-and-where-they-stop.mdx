@@ -1,0 +1,121 @@
+---
+title: "Four wildcards, one profile: where globs stop in nono"
+seoTitle: "nono profile wildcards: env var globs, hostname patterns, path globs and the exact-name carve-outs"
+date: "2026-09-03"
+description: "A nono profile has four different wildcard grammars that look identical on the page. Here is what each star means, and the four places a matching pattern still loses."
+excerpt: "You can write a star in four places in a nono profile and it means something different every time. Env vars, hostnames, filesystem paths and trust policies each have their own grammar. Plus the carve-outs where a pattern matches and the variable is dropped anyway."
+author: "Sal Kimmich"
+authorRole: "Solutions Architect"
+tags: ["nono", "profiles", "sandboxing", "configuration", "environment variables", "networking", "open source"]
+---
+
+nono runs an AI coding agent inside a kernel-enforced sandbox. What that agent can read, write, and reach comes from a profile: a JSON policy file you write once and reuse.
+
+Nobody lists every environment variable and every hostname by hand, so profiles take patterns. `AWS_*` instead of six variable names. `*.internal` instead of a list of hosts. A wrong pattern does not fail loudly. It passes something you meant to block, or blocks something you meant to pass, and you find out later.
+
+A profile has four separate wildcard grammars. Here they are.
+
+| Surface | Field | What `*` means | Valid | Never matches |
+|---|---|---|---|---|
+| Environment variables | `environment.allow_vars`, `deny_vars`, `export_env` | any run of characters, anchored to the whole name | `AWS_*`, `*_TOKEN`, `*SECRET*`, `AWS_*_KEY` | `PATH` against `PATH_EXTRA` |
+| Hostnames | `network.allow_domain`, `deny_domain` | one whole label; a leading `*.` means one or more labels | `*.example.com`, `jenkins.*.ci.example.com` | `api.*-prod.internal`, `*.foo.*.com` |
+| Filesystem paths | `filesystem.read`, `write`, `deny` | one path segment; `**` crosses segments | `/repo/**`, `**/.env.*`, `/tmp/*.json` | `?` and `[abc]`, which error rather than match |
+| Trust policy includes | `includes` in `trust-policy.json` | an ordinary file glob | `SKILLS*`, `CLAUDE*` | |
+
+None of them is a regex, and none of them behaves quite like the others.
+
+That is deliberate, and the reason is worth having before the detail.
+
+A pattern in a profile is not a convenience. It is a security claim: *these are the things I am allowing, and everything else is denied.* A grammar loose enough to accept a pattern that can never match is a grammar that lets you write a claim which is silently false. The profile looks like protection. It loads without complaint. It protects nothing.
+
+So each grammar is only as wide as the thing it names. A hostname label cannot contain a star, so the host grammar refuses to let you write one. A path separator means something a variable-name underscore does not, so the path grammar will not cross it. Four different kinds of thing, four grammars, and a star that meant the same in all four would be wrong in at least three.
+
+The rest of this post is the detail behind each row, then the part that is in no grammar at all: the places where a pattern matches and the variable is dropped anyway.
+
+## Environment variables: anchored, and stricter than it looks
+
+The matcher is thirty-two lines ([`env_sanitization.rs:68`](https://github.com/nolabs-ai/nono/blob/1f2420b3f9d7431156beacc0528526489d58964b/crates/nono-cli/src/exec_strategy/env_sanitization.rs#L68)). Split on `*`. Anchor the first piece to the front, the last to the back, walk the middle. That is all of it.
+
+Anchoring is the part that catches people. A pattern with no star has to match the whole name, so `PATH` does not match `PATH_EXTRA`. A pattern with stars still has to cover both ends. That gives you this:
+
+| Pattern | `GH_TOKEN` | `TOKEN` | `MY_TOKEN_VALUE` |
+|---|---|---|---|
+| `*_TOKEN` | match | no match | no match |
+| `*TOKEN*` | match | match | match |
+| `GH_*` | match | no match | no match |
+
+The middle column is the one that bites. `*_TOKEN` needs the underscore. A variable called plain `TOKEN` walks straight through a deny list you thought was complete, and nothing anywhere reports it, because the pattern is well-formed and it did exactly what it says. Deny by suffix and you should be denying `*TOKEN*`, wider net and all. If you came here from [the post on stripping `GH_TOKEN`](/blog/agent-should-not-hold-github-token), this is why that one names both variables in full instead of reaching for a pattern.
+
+Matching is case-sensitive unless you set `case_insensitive_vars: true`, which lowercases both sides, ASCII only.
+
+Check your version before you write a leading star. Through v0.74.0 the star was only legal as a trailing suffix: `GITHUB_*` worked, `*_TOKEN` was rejected at load. The grammar above arrived in [#1692](https://github.com/nolabs-ai/nono/commit/1f2420b3f9d7431156beacc0528526489d58964b) and has not made a tagged release yet.
+
+## Hostnames: a different grammar wearing the same clothes
+
+Host patterns are matched label by label ([`net_filter.rs:67`](https://github.com/nolabs-ai/nono/blob/1f2420b3f9d7431156beacc0528526489d58964b/crates/nono/src/net_filter.rs#L67)), and there are exactly three legal forms.
+
+A bare `*` matches any non-empty host.
+
+A leading `*.` matches one or more labels. `*.example.com` matches `a.example.com` and `a.b.example.com`, and **not** `example.com` itself. If you need the apex too, list it separately.
+
+A star occupying a whole label anywhere else matches exactly one label. `jenkins.*.ci.example.com` matches `jenkins.prod.ci.example.com`, but not `jenkins.ci.example.com` and not `jenkins.a.b.ci.example.com`.
+
+Everything else is not a wildcard. `api.*-prod.internal` puts a star inside a label. A real hostname label never contains a star, so that pattern matches nothing, forever. Same for `*.foo.*.com`, which combines a leading `*.` with another star.
+
+Both are rejected at load ([`net_filter.rs:111`](https://github.com/nolabs-ai/nono/blob/1f2420b3f9d7431156beacc0528526489d58964b/crates/nono/src/net_filter.rs#L111)), and the error says why rather than just refusing.
+
+That validator is newer than the tagged release, which makes the two versions a clean before-and-after. On v0.74.0 `api.*-prod.internal` loads without complaint and matches nothing, so an allow-list built on it allows nothing and a deny-list built on it denies nothing. You get an outage or a hole, and the profile looks fine either way. On current builds you get an error at load, on the line you typed, before anything runs.
+
+That is the trade nono keeps making: fail at load, in the author's hands, rather than at runtime in somebody else's.
+
+## Filesystem paths: expanded once, and not on both platforms the same way
+
+`*` covers any characters inside one path segment and never crosses a `/`. `**` crosses segments, and `**/foo` matches `foo` at the root as well as `dir/foo`. `?` and `[abc]` are not supported and return an error rather than being treated as literals, which makes this the only one of the four grammars that refuses a character instead of passing it through.
+
+Two edges are worth committing to memory. `foo/**` covers everything beneath `foo` but not `foo` itself, so denying a directory takes a separate literal entry. And these patterns are expanded at sandbox start, not matched live.
+
+That last one is where a profile stops behaving the same on both platforms. On Linux the pattern becomes a list of concrete paths when the sandbox is built, so a file created afterward is not covered even though the pattern would have matched it. On macOS the same pattern is compiled into a Seatbelt regex evaluated at access time, which does cover files created later.
+
+Same profile, two behaviors, no warning either way. If you are writing a profile on a Mac for colleagues on Linux, this is the surface that will embarrass you.
+
+## Where a matching pattern still loses
+
+There is a second answer to the same question, and it is not in any grammar. Some things a pattern cannot grant no matter how well it is written.
+
+`export_env` copies variables into a [brokered tool](/blog/enforcement-unit-is-the-tool-call) verbatim and bypasses `allow_vars`, so it has the loosest reach of any pattern field in a profile. It also has the most carve-outs ([`env.rs:122`](https://github.com/nolabs-ai/nono/blob/1f2420b3f9d7431156beacc0528526489d58964b/crates/nono-cli/src/tool-sandbox/env.rs#L122)).
+
+**`PATH` and anything starting with `NONO_`** are skipped, including under a bare `*`. nono resolves commands through `PATH` and uses its own namespace for broker plumbing, so neither is yours to re-export.
+
+**1Password service credentials** are always dropped: `OP_SERVICE_ACCOUNT_TOKEN`, `OP_CONNECT_TOKEN`, `OP_CONNECT_HOST`, and any `OP_SESSION_*`. Match them however you like; they do not travel.
+
+**Loader variables need their exact name.** `LD_*` will not export `LD_PRELOAD`. `DYLD_*` will not export `DYLD_INSERT_LIBRARIES`. You have to write the full name, and the reason is in the source: loader variables hit every dynamically linked child, not just an interpreter, so a wildcard is not specific enough to count as consent.
+
+That last one is the whole thesis in miniature, and it generalizes past nono.
+
+A wildcard is a statement about a shape. `LD_PRELOAD` is not a shape problem: it redirects the dynamic loader for every process downstream of it, so a policy that grants it by accident has granted arbitrary code execution by accident. Nobody writing `LD_*` in an export list is thinking about that. nono assumes they are not, and requires the name.
+
+**Blast radius sets the specificity.** Where a mistake is recoverable, a pattern is fine and nono will take one. Where it is not, nono asks you to type the name, and it does that because a wildcard is precisely the mechanism by which someone grants a thing they never considered.
+
+`set_vars` has its own floor for the same reason: it refuses `PATH`, any `NONO_*`, and any key that is not a valid POSIX name.
+
+## One thing that looks like a pattern and is not
+
+`@git:config-files`, `@git:common-dir`, `@git:worktree` and their siblings are dynamic tokens, not globs. Nothing is matched. nono runs git, reads the answer, and expands the token into concrete paths at sandbox start.
+
+The difference matters when a grant misbehaves. A pattern matching nothing is a pattern problem. A token expanding to nothing is an environment problem, and you debug it by asking git the same question yourself.
+
+## The limits
+
+Same principle, turned on this post.
+
+**Two schema descriptions are wrong right now.** `CommandEnvironmentConfig.allow_vars` still documents trailing-prefix wildcards, and it has used the shared glob matcher since #1692. Separately, `EnvironmentConfig.allow_vars` says empty and absent both allow everything; an explicitly empty `[]` strips every inherited variable instead. The code is right in both cases, and `docs/cli/features/tool-sandbox.mdx` has not been updated for the new grammar at all. If you are reading a description string and it disagrees with what you are seeing, trust what you are seeing.
+
+**Path globs behave differently per platform.** On Linux a pattern is expanded to concrete paths at sandbox start, so a file created afterward is not covered even if the pattern would have matched it. macOS compiles the same pattern into a Seatbelt regex evaluated at access time, which does cover later files. Same profile, different behavior, no warning either way. One more edge worth knowing: `foo/**` covers everything beneath `foo` but not `foo` itself, so a deny on a directory needs the directory listed separately.
+
+**Validation catches shape, not intent.** `*_TOKEN` is a well-formed pattern that loads without complaint and misses a variable called `TOKEN`. Nothing in nono can tell you that you meant something wider. Write the pattern, then check it against the actual variable names on the machine you care about.
+
+**None of this bounds what a pattern can reach.** A wildcard in a command policy grants authority; it does not narrow authority granted elsewhere. Patterns compose through `extends`, and that composition only ever widens: a pattern in a shared base profile is a pattern every profile extending it inherits, and no child can take it back.
+
+Which changes the stakes once more than one person is involved. A wrong pattern in a profile you wrote yourself is your afternoon. The same pattern in a base profile your team extends is everyone's, silently, until someone runs the resolver. That is the subject of the next nono blog, so you understand how to put this all together.
+
+Until then, the useful habit is small: after you write a pattern, go and check it against the actual names on the machine you care about. Not because nono is untrustworthy, but because the one thing no validator can check is whether the claim you made is the claim you meant.
