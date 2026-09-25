@@ -36,18 +36,18 @@ const relatedPages = [
   },
 ];
 
-const supervisorCode = `# Enable supervised mode with capability expansion
-$ nono run --supervised --allow ~/projects/myapp -- claude
+const supervisorCode = `# Supervision is on by default; opt into capability expansion on Linux
+$ nono run --capability-elevation --allow ~/projects/myapp -- claude
 
 # Combine with credential injection via reverse proxy
-$ nono run --supervised \\
+$ nono run --capability-elevation \\
     --allow ~/projects/myapp \\
     --credential openai \\
     --credential anthropic \\
     -- claude
 
 # Or inject credentials as environment variables
-$ nono run --supervised \\
+$ nono run --capability-elevation \\
     --allow ~/projects/myapp \\
     --env-credential openai_api_key,anthropic_api_key \\
     -- claude`;
