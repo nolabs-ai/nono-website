@@ -124,6 +124,13 @@ for (const page of sdkPages) {
   }, { required: true });
 }
 
+// ── Talk resources page ──
+
+testPage('OSS Talk Resources', 'oss/index.html', (html) => {
+  assertBaseSEO(html, 'OSS Talk Resources');
+  assertOG(html, 'OSS Talk Resources');
+}, { required: true });
+
 // ── Blog index ──
 
 testPage('Blog Index', 'blog/index.html', (html) => {
