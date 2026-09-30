@@ -76,21 +76,23 @@ export default function Footer() {
   return (
     <footer className="py-16 px-6 border-t border-border">
       <div className="max-w-6xl mx-auto">
-        {/* Design partners cross-reference */}
+        {/* nolabs enterprise cross-reference */}
         <div className="mb-12 pb-8 border-b border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <p className="text-sm text-muted leading-relaxed">
             <span className="text-foreground font-semibold">
-              Running nono for something that matters?
+              Everything in nono, operationalized for production at scale.
             </span>{" "}
-            We&apos;re taking on design partners.
+            We&apos;re building the nolabs platform &mdash; turning runtime
+            boundaries into a system of record for security, platform, and
+            compliance teams. Here&apos;s the layer taking shape.
           </p>
           <a
-            href="https://nolabs.ai/design-partners"
+            href="https://nolabs.ai/enterprise"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-foreground hover:text-muted-strong transition-colors shrink-0"
           >
-            Become a Design Partner &rarr;
+            Explore nolabs Enterprise &rarr;
           </a>
         </div>
 

@@ -11,28 +11,10 @@
     "role": "Principal Engineer, Okta",
     "avatar": "/testimonials/leonardo-zanivan.jpeg"
   },
-    {
-    "quote": "Neat project, thanks for sharing! I like the OS-specific security primitives, useful built-in profiles, and being able to customize what's allowed/blocked.",
+  {
+    "quote": "Neat project, OS-specific security primitives, useful built-in profiles, and being able to customize what's allowed/blocked.",
     "name": "Clint Gibler",
-    "role": "Member of Technical Staff, OpenAI",
+    "role": "Member of Technical Staff, Leading Cyber @ OpenAI",
     "avatar": "/testimonials/clint-gibler.jpeg"
-  },
-  {
-    "quote": "OS-Level Isolation for AI Agents. Really awesome work and resource here",
-    "name": "Chris Hughes",
-    "role": "VP, Security Strategy @ Zenity",
-    "avatar": "/testimonials/chris-hughes.jpeg"
-  },
-  {
-    "quote": "I integrated nono into my project this weekend and it was a breeze to work with!",
-    "name": "Terra Tauri",
-    "role": "Senior Engineer II, Bit Complete",
-    "avatar": "/testimonials/terra-tauri.jpeg"
-  },
-  {
-    "quote": "Beautiful work! It is encouraging to see kernel security being taken seriously, especially during this current episode of OpenClaw and Moltbot. ",
-    "name": "Cuong Nguyen",
-    "role": "Cloud Architect and System Engineer",
-    "avatar": "/testimonials/cuong-nguyen.jpeg"
   }
 ]

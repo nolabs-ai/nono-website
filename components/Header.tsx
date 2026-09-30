@@ -12,8 +12,6 @@ import {
   ScrollText,
   Fingerprint,
   Shield,
-  Code,
-  FileCode,
   Globe,
   KeyRound,
   Terminal,
@@ -49,33 +47,6 @@ interface NavItem {
   external?: boolean;
   bold?: boolean;
 }
-
-const sandboxDropdown: DropdownItem[] = [
-  {
-    href: "/os-sandbox",
-    label: "OS Sandbox",
-    description: "Kernel isolation for Linux, macOS & Windows",
-    icon: Lock,
-  },
-  {
-    href: "/python-sandbox",
-    label: "Python Sandbox",
-    description: "Isolate Python AI agents",
-    icon: Code,
-  },
-  {
-    href: "/node-sandbox",
-    label: "Node.js Sandbox",
-    description: "Isolate Node.js AI agents",
-    icon: FileCode,
-  },
-  {
-    href: "/go-sandbox",
-    label: "Go Sandbox",
-    description: "Isolate Go AI agents",
-    icon: Code,
-  },
-];
 
 const featuresDropdown: DropdownItem[] = [
   {
@@ -129,7 +100,6 @@ const featuresDropdown: DropdownItem[] = [
 ];
 
 const navItems: NavItem[] = [
-  { label: "Sandboxes", dropdown: sandboxDropdown },
   { label: "Features", dropdown: featuresDropdown },
   { label: "Blog", href: "/blog" },
   { label: "Registry", href: "/registry" },

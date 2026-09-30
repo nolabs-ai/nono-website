@@ -157,7 +157,7 @@ export default function ToolSandboxArchitecture() {
         <div className="text-center">
           <span className="mb-5 inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-(--ts-accent)">
             <span className="inline-block size-1.5 bg-(--ts-accent)" aria-hidden="true" />
-            Tool Sandbox
+            Ephemeral Micro Toolboxes
           </span>
           <h2
             id="tool-sandbox-heading"
@@ -169,12 +169,12 @@ export default function ToolSandboxArchitecture() {
             Brokered Tool Execution
           </p>
           <p className="mx-auto max-w-2xl text-sm leading-relaxed text-(--ts-muted) md:text-base">
-            Every tool call gets an ephemeral micro tool sandbox, scoped to only the
+            Every tool call gets an ephemeral micro toolbox, scoped to only the
             files, network routes, arguments, and credentials it needs. Every decision
             is auditable.
           </p>
           <p className="sr-only">
-            How nono&apos;s tool sandbox works: a coding agent runs a tool invocation, for
+            How nono&apos;s ephemeral micro toolboxes work: a coding agent runs a tool invocation, for
             example gh issue view. The nono supervisor resolves and verifies the
             executable, evaluates argv policy for the caller and arguments, and on
             approval creates a fresh, invocation-scoped micro sandbox around the tool
@@ -201,7 +201,7 @@ export default function ToolSandboxArchitecture() {
 
         <div
           role="group"
-          aria-label="Tool sandbox scenarios"
+          aria-label="Ephemeral micro toolbox scenarios"
           className="mt-10 flex flex-wrap justify-center gap-1.5"
         >
           {SCENARIOS.map((s) => {

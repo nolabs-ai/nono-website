@@ -17,12 +17,14 @@ import { FathomAnalytics } from "@/components/Fathom";
 export const metadata: Metadata = {
   metadataBase: new URL("https://nono.sh"),
   title: {
-    default: "Sandbox for AI Agents — Kernel-Level Isolation | nono",
+    default: "Agent Runtime Security — Kernel-Enforced Boundaries | nono",
     template: "%s | nono",
   },
   description:
     "capability-based, policy-governed runtime for AI agents, with kernel-enforced isolation, network filtering, immutable auditing, and atomic rollbacks for AI agents.",
   keywords: [
+    "agent runtime security",
+    "AI agent runtime",
     "AI agent sandbox",
     "AI agent security",
     "OS-level isolation",
@@ -63,7 +65,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sandbox for AI Agents — Kernel-Level Isolation | nono",
+    title: "Agent Runtime Security — Kernel-Enforced Boundaries | nono",
     description:
       "Kernel-enforced isolation, network filtering, immutable auditing, and atomic rollbacks for AI agents - built into the nono CLI and native SDKs.",
     site: "@nolabs",

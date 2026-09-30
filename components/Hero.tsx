@@ -7,7 +7,7 @@ export default function Hero() {
     <section className="relative pt-32 pb-12 px-6">
       <div className="max-w-4xl mx-auto w-full text-center">
         <h1 className="sr-only">
-          Ephemeral micro sandboxes for AI agents, with zero setup and zero latency.
+          Agent runtime security. Kernel-enforced boundaries for AI agents, with zero setup and zero latency.
         </h1>
         <div
           aria-hidden="true"
@@ -19,7 +19,7 @@ export default function Hero() {
           aria-hidden="true"
           className="text-xl md:text-2xl font-semibold tracking-tight text-foreground max-w-2xl mx-auto leading-snug"
         >
-          Ephemeral micro sandboxes for AI agents, with zero setup and zero latency.
+          Agent runtime security. Kernel-enforced boundaries for AI agents, with zero setup and zero latency.
         </p>
       </div>
     </section>
